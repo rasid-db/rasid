@@ -62,7 +62,7 @@ export default function LandingPage() {
           {/* أزرار التوجيه الرئيسية */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
             
-            {/* زر تقديم/متابعة بلاغ */}
+            {/* زر تقديم / متابعة بلاغ */}
             <Link
               href="/report"
               className="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-xl shadow-blue-600/25 transition transform active:scale-95 flex items-center justify-center gap-3 border border-blue-500/30"
@@ -114,9 +114,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* الفوتر (Footer) */}
-      <footer className="border-t border-slate-800/60 py-6 text-center text-slate-500 text-xs">
-        <p>© {new Date().getFullYear()} منصة راصد - جميع الحقوق محفوظة</p>
+      {/* الفوتر الشامل (Footer) */}
+      <footer className="bg-slate-950 border-t border-slate-800 py-10 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right">
+          
+          {/* بيانات التأسيس والمؤسس */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <span className="bg-blue-600/20 text-blue-400 border border-blue-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                تأسست عام 2026م
+              </span>
+            </div>
+            <p className="text-sm font-bold text-slate-200">
+              تطوير وتأسيس: <span className="text-blue-400 font-extrabold">المهندس / نهضة المناقل</span>
+            </p>
+            <p className="text-xs text-slate-500">
+              منصة سودانية مستقلة تهدف لترسيخ الشفافية والعدالة.
+            </p>
+          </div>
+
+          {/* روابط التواصل الاجتماعي */}
+          <div className="flex items-center justify-center gap-3">
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
+              title="منصة X / تويتر"
+            >
+              🐦 X (تويتر)
+            </a>
+
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
+              title="فيسبوك"
+            >
+              📘 فيسبوك
+            </a>
+
+            <a
+              href="https://wa.me/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900 hover:bg-emerald-600/20 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
+              title="واتساب"
+            >
+              💬 واتساب
+            </a>
+          </div>
+
+        </div>
+
+        {/* شريط الحقوق والأمان */}
+        <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+          <p>© 2026 منصة راصد - جميع الحقوق محفوظة</p>
+          <p className="text-slate-600">نظام مشفر ومحمي بالكامل 🔒</p>
+        </div>
       </footer>
 
     </div>
