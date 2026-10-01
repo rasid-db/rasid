@@ -36,10 +36,10 @@ function SudaneseAvatarGuide() {
 
   return (
     <section className="py-12 px-4 my-8 relative">
-      <div className="max-w-4xl mx-auto bg-slate-900/90 border border-amber-500/30 rounded-3xl p-6 md:p-10 shadow-2xl shadow-amber-500/5 relative overflow-hidden backdrop-blur-md">
+      <div className="max-w-4xl mx-auto bg-slate-900/90 border border-amber-500/30 rounded-3xl p-6 md:p-10 shadow-2xl shadow-amber-500/5 relative overflow-visible backdrop-blur-md">
         
         {/* خلفية بنقوش هندسية سودانية خفيفة */}
-        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none rounded-3xl" />
 
         {/* عنوان القسم */}
         <div className="text-center mb-8 space-y-2 relative z-10">
@@ -57,26 +57,32 @@ function SudaneseAvatarGuide() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10">
           
           {/* جانب الشخصية الكرتونية والفقاعة الكلامية */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center text-center space-y-4">
-            <div className="relative w-48 h-48 md:w-56 md:h-56 bg-gradient-to-b from-amber-500/20 via-blue-600/10 to-slate-900 rounded-full border-2 border-amber-500/40 p-2 flex items-center justify-center shadow-inner overflow-hidden">
+          <div className="md:col-span-5 flex flex-col items-center justify-center text-center space-y-4 pt-6">
+            
+            <div className="relative w-48 h-48 md:w-56 md:h-56 bg-slate-950 rounded-full border-2 border-amber-500/50 p-1 flex items-center justify-center shadow-2xl shadow-amber-500/10">
               
-              {/* فقاعة كلام الشخصية (Speech Bubble) */}
-              <div className="absolute top-2 right-2 z-20 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs p-2.5 rounded-2xl rounded-bl-none shadow-xl max-w-[180px] text-right border border-amber-300 leading-snug">
+              {/* فقاعة كلام الشخصية (موضوعة بوضوح فوق الدائرة) */}
+              <div className="absolute -top-12 right-0 left-0 mx-auto z-30 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs p-3 rounded-2xl shadow-2xl max-w-[220px] text-center border border-amber-300 leading-snug animate-fade-in">
                 "{steps[currentStep].dialogue}"
+                <div className="absolute -bottom-2 right-1/2 translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-amber-500" />
               </div>
 
               {/* فيديو المرشد السوداني */}
-              <video 
-                src="/sudanese-avatar.mp4" 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                className="w-full h-full object-cover rounded-full"
-              />
+              <div className="w-full h-full rounded-full overflow-hidden relative z-10 bg-slate-900">
+                <video 
+                  key={currentStep}
+                  src="/sudanese-avatar.mp4" 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 pt-2">
               <h4 className="font-extrabold text-amber-400 text-base flex items-center justify-center gap-1.5">
                 <span>المرشد السوداني</span>
                 <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md">راصد</span>
