@@ -9,12 +9,49 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// قائمة الوزارات والجهات المعنية
+const MINISTRIES = [
+  'وزارة الصحة',
+  'وزارة التربية والتعليم',
+  'وزارة المالية والاقتصاد الوطني',
+  'وزارة الحكم المحلي والبلديات',
+  'وزارة التنمية الاجتماعية والإغاثة',
+  'وزارة الزراعة والغابات',
+  'وزارة الثروة الحيوانية',
+  'وزارة الطاقة والنظر والمياه',
+  'وزارة البنية التحتية والنقل',
+  'وزارة العدل',
+  'وزارة الداخلية والأمن الداخلي',
+  'وزارة الإعلام والثقافة',
+  'وزارة التجارة والصناعة',
+  'وزارة العمل والإصلاح الإداري',
+  'المجالس والمؤسسات الولائية / المحليات',
+  'منظمات وهيئات إغاثية / طوعية',
+  'جهة أو مؤسسة أخرى',
+];
+
+// قائمة أنواع المخالفات والفساد
+const CORRUPTION_TYPES = [
+  'اختلاس وتبديد المال العام',
+  'الرشوة والابتزاز المالي',
+  'استغلال النفوذ والسلطة الوظيفية',
+  'المحسوبية والتمييز في التعيينات والخدمات',
+  'سوء توزيع المساعدات الإنسانية والإغاثة',
+  'التلاعب في العقود والمشتريات الحكومية',
+  'الإهمال والتقصير في الخدمات الصحية والطبية',
+  'التسيب والإهمال الإداري والمالي',
+  'مخالفات في تحصيل الرسوم والجبايات',
+  'تجاوزات في الأراضي والعقارات الحكومية',
+  'أنواع أخرى من التجاوزات والفساد',
+];
+
 export default function ReportPage() {
   const [activeTab, setActiveTab] = useState<'submit' | 'track'>('submit');
 
   // حالات نموذج تقديم البلاغ
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(''); // نوع الفساد / المخالفة
+  const [ministry, setMinistry] = useState(''); // الوزارة / الجهة المعنية
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [reporterName, setReporterName] = useState('');
@@ -74,7 +111,7 @@ export default function ReportPage() {
           reference_code: referenceCode,
           title,
           category,
-          location,
+          location: `${ministry ? `[${ministry}] ` : ''}${location}`,
           description,
           reporter_name: reporterName || 'مجهول',
           reporter_phone: reporterPhone || null,
@@ -89,6 +126,7 @@ export default function ReportPage() {
       // إعادة تعيين الحقول
       setTitle('');
       setCategory('');
+      setMinistry('');
       setLocation('');
       setDescription('');
       setReporterName('');
@@ -143,7 +181,7 @@ export default function ReportPage() {
             ← العودة للرئيسية
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-xl">🛡️</span>
+            <span className="text-xl">🛡️️</span>
             <span className="font-black text-white text-lg">منصة راصد</span>
           </div>
         </div>
@@ -209,7 +247,7 @@ export default function ReportPage() {
                   <input
                     type="text"
                     required
-                    placeholder="مثال: تجاوز في المرفق الصحي"
+                    placeholder="مثال: تجاوز واختلاس في توزيع الإغاثة"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
@@ -218,41 +256,58 @@ export default function ReportPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2">نوع المخالفة *</label>
+                    <label className="block text-xs font-bold text-slate-300 mb-2">نوع المخالفة / الفساد *</label>
                     <select
                       required
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
                     >
-                      <option value="">إختر تصنيف...</option>
-                      <option value="تجاوزات إدارية">تجاوزات إدارية</option>
-                      <option value="خدمات صحية">خدمات صحية</option>
-                      <option value="خدمات محلية">خدمات محلية</option>
-                      <option value="إغاثة ومساعدات">إغاثة ومساعدات</option>
-                      <option value="أخرى">أخرى</option>
+                      <option value="">إختر نوع الفساد...</option>
+                      {CORRUPTION_TYPES.map((item, idx) => (
+                        <option key={idx} value={item}>
+                          {item}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2">الموقع / المنطقة *</label>
-                    <input
-                      type="text"
+                    <label className="block text-xs font-bold text-slate-300 mb-2">الوزارة / الجهة المعنية *</label>
+                    <select
                       required
-                      placeholder="مثال: المناقل - الحي الشمالي"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
+                      value={ministry}
+                      onChange={(e) => setMinistry(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
-                    />
+                    >
+                      <option value="">إختر الوزارة أو الجهة...</option>
+                      {MINISTRIES.map((item, idx) => (
+                        <option key={idx} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-2">تفاصيل البلاغ *</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">الموقع الجغرافي / المنطقة بالتفصيل *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: ولاية الجزيرة - محلية المناقل - مستشفى المناقل"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">تفاصيل وشرح البلاغ *</label>
                   <textarea
                     required
                     rows={4}
-                    placeholder="اكتب شرحاً تفصيلياً للواقعة أو التجاوز..."
+                    placeholder="اكتب شرحاً تفصيلياً للواقعة والتجاوزات والتواريخ والأسماء إن وجدت..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
@@ -353,7 +408,7 @@ export default function ReportPage() {
                 </div>
 
                 <div className="border-b border-slate-800 pb-3">
-                  <span className="text-slate-400 text-xs block mb-1">التصنيف والموقع:</span>
+                  <span className="text-slate-400 text-xs block mb-1">نوع الفساد والجهة:</span>
                   <span className="text-slate-300">{trackedReport.category} - {trackedReport.location}</span>
                 </div>
 
