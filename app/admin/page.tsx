@@ -19,10 +19,20 @@ interface Report {
   created_at: string;
 }
 
+const STATUS_OPTIONS = [
+  'الكل',
+  'قيد المراجعة',
+  'قيد التحقيق',
+  'تم الاتخاذ والإحالة',
+  'مكتمل ومغلق',
+  'مرفوض / غير مستوفي'
+];
+
 export default function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('الكل');
 
   // جلب البلاغات من Supabase
   const fetchReports = async () => {
@@ -84,6 +94,12 @@ export default function AdminDashboard() {
     }
   };
 
+  // تصفية البلاغات بناءً على الحالة المختارة
+  const filteredReports = reports.filter((report) => {
+    if (selectedStatusFilter === 'الكل') return true;
+    return (report.status || 'قيد المراجعة') === selectedStatusFilter;
+  });
+
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 dir-rtl">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -107,18 +123,51 @@ export default function AdminDashboard() {
           </button>
         </header>
 
+        {/* شريط الفلترة حسب الحالة */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-bold text-slate-700 ml-2">تصفية حسب الحالة:</span>
+          {STATUS_OPTIONS.map((statusOption) => {
+            const count = statusOption === 'الكل'
+              ? reports.length
+              : reports.filter(r => (r.status || 'قيد المراجعة') === statusOption).length;
+
+            return (
+              <button
+                key={statusOption}
+                onClick={() => setSelectedStatusFilter(statusOption)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  selectedStatusFilter === statusOption
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{statusOption}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  selectedStatusFilter === statusOption ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* قائمة البلاغات */}
         {loading ? (
           <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
             <p className="text-slate-500 font-bold">جاري تحميل البلاغات...</p>
           </div>
-        ) : reports.length === 0 ? (
+        ) : filteredReports.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-            <p className="text-slate-500 font-bold">لا توجد بلاغات مسجلة حالياً.</p>
+            <p className="text-slate-500 font-bold">
+              {selectedStatusFilter === 'الكل'
+                ? 'لا توجد بلاغات مسجلة حالياً.'
+                : `لا توجد بلاغات بحالة "${selectedStatusFilter}".`}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {reports.map((report) => (
+            {filteredReports.map((report) => (
               <ReportCard
                 key={report.id}
                 report={report}
