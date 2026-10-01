@@ -126,7 +126,7 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-sm font-bold text-slate-200">
-              تطوير وتأسيس: <span className="text-blue-400 font-extrabold">المهندس / نهضة المناقل</span>
+              تطوير وتأسيس: <span className="text-blue-400 font-extrabold">معاذ الزين</span>
             </p>
             <p className="text-xs text-slate-500">
               منصة سودانية مستقلة تهدف لترسيخ الشفافية والعدالة.
@@ -136,7 +136,7 @@ export default function LandingPage() {
           {/* روابط التواصل الاجتماعي */}
           <div className="flex items-center justify-center gap-3">
             <a
-              href="https://twitter.com"
+              href="https://x.com/RASISUDAN1"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
@@ -146,7 +146,7 @@ export default function LandingPage() {
             </a>
 
             <a
-              href="https://facebook.com"
+              href="https://facebook.comhttps://www.facebook.com/profile.php?id=61595056197520"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
@@ -156,13 +156,13 @@ export default function LandingPage() {
             </a>
 
             <a
-              href="https://wa.me/"
+              href="https://www.instagram.com/rasid.sudan?stkn=emNiMmFzMzVpZXE5"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-slate-900 hover:bg-emerald-600/20 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
-              title="واتساب"
+              title="انستغرام"
             >
-              💬 واتساب
+              💬 انستغرام
             </a>
           </div>
 
