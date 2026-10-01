@@ -8,76 +8,75 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// قائمة المشرفين المصرح لهم
-const ADMINS = [
-  { id: '1', name: 'المشرف أحمد', pass: '1234' },
-  { id: '2', name: 'المشرف معاذ', pass: '5678' },
-];
-
 export default function AdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState(ADMINS[0].name);
-  const [passwordInput, setPasswordInput] = useState('');
+  const [user, setUser] = useState<any>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('الكل');
 
-  // التحقق من وجود جلسة دخول سابقة
+  // التحقق من حالة تسجيل الدخول الحالية
   useEffect(() => {
-    const savedAuth = localStorage.getItem('rasid_admin_auth');
-    if (savedAuth === 'true') {
-      setIsAuthenticated(true);
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      setUser(data.user);
       fetchReports();
     }
-  }, []);
+  };
 
   // جلب البلاغات من Supabase
   const fetchReports = async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setReports(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (!error && data) {
+      setReports(data);
     }
+    setLoading(false);
   };
 
-  // تسجيل الدخول
-  const handleLogin = (e: React.FormEvent) => {
+  // تسجيل الدخول ببيانات Supabase Auth
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const adminObj = ADMINS.find((a) => a.name === selectedAdmin);
+    setAuthLoading(true);
+    setAuthError('');
 
-    if (adminObj && adminObj.pass === passwordInput) {
-      setIsAuthenticated(true);
-      localStorage.setItem('rasid_admin_auth', 'true');
-      localStorage.setItem('rasid_admin_name', selectedAdmin);
-      setAuthError('');
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setAuthError('بيانات الدخول غير صحيحة، يرجى التأكد من البريد وكلمة المرور.');
+    } else if (data.user) {
+      setUser(data.user);
       fetchReports();
-    } else {
-      setAuthError('كلمة المرور غير صحيحة!');
     }
+
+    setAuthLoading(false);
   };
 
   // تسجيل الخروج
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('rasid_admin_auth');
-    localStorage.removeItem('rasid_admin_name');
-    setPasswordInput('');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setEmail('');
+    setPassword('');
   };
 
-  // 1. شاشة تسجيل الدخول إذا لم يكن المشرف مسجلاً
-  if (!isAuthenticated) {
+  // 1. شاشة تسجيل الدخول
+  if (!user) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4 dir-rtl">
         <div className="bg-slate-800 border border-slate-700 p-8 rounded-3xl max-w-md w-full shadow-2xl space-y-6">
@@ -95,37 +94,35 @@ export default function AdminDashboard() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-2">اختر المشرف:</label>
-              <select
-                value={selectedAdmin}
-                onChange={(e) => setSelectedAdmin(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
-              >
-                {ADMINS.map((admin) => (
-                  <option key={admin.id} value={admin.name}>
-                    {admin.name}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-xs font-bold text-slate-300 mb-2">البريد الإلكتروني للمشرف:</label>
+              <input
+                type="email"
+                required
+                placeholder="example@domain.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 text-left dir-ltr"
+              />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-2">كلمة المرور / PIN:</label>
+              <label className="block text-xs font-bold text-slate-300 mb-2">كلمة المرور:</label>
               <input
                 type="password"
                 required
-                placeholder="أدخل كلمة المرور الخاصة بك"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 font-mono text-center tracking-widest"
+                placeholder="أدخل كلمة المرور"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg"
+              disabled={authLoading}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg disabled:opacity-50"
             >
-              دخول اللوحة
+              {authLoading ? 'جاري التحقق...' : 'دخول اللوحة'}
             </button>
           </form>
 
@@ -139,16 +136,15 @@ export default function AdminDashboard() {
     );
   }
 
-  // تصفية البلاغات حسب الحالة المختارة
   const filteredReports =
     statusFilter === 'الكل' ? reports : reports.filter((r) => r.status === statusFilter);
 
-  // 2. الشاشة الرئيسية للوحة عند النجاح في تسجيل الدخول
+  // 2. شاشة لوحة الإشراف
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 p-4 md:p-8 dir-rtl">
       <div className="max-w-6xl mx-auto space-y-6">
         
-        {/* الهيدر العلوي */}
+        {/* الهيدر */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
@@ -159,8 +155,8 @@ export default function AdminDashboard() {
 
           <div className="flex items-center gap-3">
             <div className="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-2">
-              <span>أنت تعمل بصفتك:</span>
-              <span className="text-blue-600 font-black">{selectedAdmin}</span>
+              <span>المشرف الحالي:</span>
+              <span className="text-blue-600 font-bold dir-ltr">{user.email}</span>
             </div>
 
             <button
@@ -179,7 +175,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* أزرار الفلترة حسب الحالة */}
+        {/* أزرار التصفية */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-bold">
           <span className="text-slate-400 whitespace-nowrap ml-2">تصفية حسب الحالة:</span>
           {['الكل', 'قيد المراجعة', 'قيد التحقيق', 'تم الاتخاذ والإحالة', 'مكتمل ومغلق', 'مرفوض / غير مستوفي'].map((st) => (
@@ -222,15 +218,9 @@ export default function AdminDashboard() {
                   <h3 className="font-black text-slate-900 text-base">{report.title}</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-                    <div>
-                      <span className="font-bold">نوع الفساد:</span> {report.category}
-                    </div>
-                    <div>
-                      <span className="font-bold">الموقع / الجهة:</span> {report.location}
-                    </div>
-                    <div>
-                      <span className="font-bold">المُبلّغ:</span> {report.reporter_name} ({report.reporter_phone || 'بدون رقم'})
-                    </div>
+                    <div><span className="font-bold">نوع الفساد:</span> {report.category}</div>
+                    <div><span className="font-bold">الموقع / الجهة:</span> {report.location}</div>
+                    <div><span className="font-bold">المُبلّغ:</span> {report.reporter_name} ({report.reporter_phone || 'بدون رقم'})</div>
                     <div>
                       <span className="font-bold">الحالة:</span>{' '}
                       <span className="bg-slate-200 px-2.5 py-0.5 rounded-md font-bold text-slate-800">

@@ -1,6 +1,120 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+
+// مكون الأنيميشن للخطوات
+function HowToReportAnimated() {
+  const [activeStep, setActiveStep] = useState(0);
+
+  const steps = [
+    {
+      id: '01',
+      title: '1. اضغط على "تقديم بلاغ"',
+      desc: 'انقر على زر تقديم / متابعة بلاغ للبدء في تعبئة الاستمارة الآمنة.',
+      icon: '📝',
+    },
+    {
+      id: '02',
+      title: '2. أدخل تفاصيل البلاغ',
+      desc: 'اكتب تفاصيل واضحة عن حالة الفساد، حدد الموقع، وأرفق أي أدلة إن وجدت.',
+      icon: '📂',
+    },
+    {
+      id: '03',
+      title: '3. احفظ الرمز المرجعي الفريد',
+      desc: 'سيُنشئ النظام رمزاً مرجعياً خاصاً بك لتتمكن من متابعة حالة البلاغ بسريّة تامّة.',
+      icon: '🔑',
+    },
+    {
+      id: '04',
+      title: '4. متابعة الإجراءات والردود',
+      desc: 'يمكنك استخدام الرمز المرجعي في أي وقت لمعرفة ردود الإدارة والقرارات المتخذة.',
+      icon: '🛡️',
+    },
+  ];
+
+  // حركة تنقل تلقائية بين الخطوات
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % steps.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [steps.length]);
+
+  return (
+    <section className="py-16 px-4 bg-slate-950/80 border-y border-slate-800/80 dir-rtl my-8">
+      <div className="max-w-5xl mx-auto space-y-10">
+        
+        {/* عنوان قسم الأنيميشن */}
+        <div className="text-center space-y-3">
+          <span className="text-blue-400 font-bold text-xs bg-blue-500/10 border border-blue-500/20 px-3.5 py-1.5 rounded-full inline-block">
+            ⚡ كيف تعمل المنصة؟
+          </span>
+          <h2 className="text-2xl md:text-3xl font-black text-white">
+            خطوات تقديم ومتابعة بلاغك بسهولة
+          </h2>
+          <p className="text-slate-400 text-xs md:text-sm max-w-lg mx-auto">
+            تضمن منصة راصد سرية بياناتك وتوفر تجربة سلسة وسريعة لتوثيق وتتبع التجاوزات.
+          </p>
+        </div>
+
+        {/* كروت الخطوات المتحركة */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+          {steps.map((step, idx) => {
+            const isActive = activeStep === idx;
+            return (
+              <div
+                key={step.id}
+                onClick={() => setActiveStep(idx)}
+                className={`cursor-pointer rounded-2xl p-6 transition-all duration-500 relative border ${
+                  isActive
+                    ? 'bg-slate-900 border-blue-500 shadow-xl shadow-blue-500/10 scale-105 z-10'
+                    : 'bg-slate-900/40 border-slate-800/80 hover:border-slate-700 opacity-70'
+                }`}
+              >
+                {/* خط إضاءة يتحرك مع الكرت النشط */}
+                {isActive && (
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-2xl animate-pulse" />
+                )}
+
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-transform duration-500 ${
+                      isActive ? 'scale-110 bg-slate-800 border border-blue-500/30' : 'bg-slate-800/50'
+                    }`}
+                  >
+                    {step.icon}
+                  </div>
+                  <span className="text-slate-600 font-mono font-black text-lg">
+                    {step.id}
+                  </span>
+                </div>
+
+                <h3 className="text-white font-bold text-sm mb-2">{step.title}</h3>
+                <p className="text-slate-400 text-xs leading-relaxed">{step.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* مؤشر النقاط التفاعلي */}
+        <div className="flex justify-center items-center gap-2 pt-2">
+          {steps.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveStep(idx)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                activeStep === idx ? 'w-8 bg-blue-500' : 'w-2 bg-slate-700'
+              }`}
+            />
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+}
 
 export default function LandingPage() {
   return (
@@ -83,8 +197,11 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* قسم الأنيميشن التفاعلي: شرح خطوات التبليغ */}
+      <HowToReportAnimated />
+
       {/* مميزات المنصة (Features Section) */}
-      <section className="bg-slate-950/60 border-t border-slate-800/80 py-12 px-4">
+      <section className="bg-slate-950/60 py-12 px-4">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           
           <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
@@ -126,7 +243,7 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-sm font-bold text-slate-200">
-              تطوير وتأسيس: <span className="text-blue-400 font-extrabold">معاذ الزين</span>
+              تطوير وتأسيس: <span className="text-blue-400 font-extrabold">مجموعة رصد التطوعية</span>
             </p>
             <p className="text-xs text-slate-500">
               منصة سودانية مستقلة تهدف لترسيخ الشفافية والعدالة.
@@ -134,43 +251,43 @@ export default function LandingPage() {
           </div>
 
           {/* روابط التواصل الاجتماعي */}
-<div className="flex items-center justify-center gap-3">
-  {/* تويتر / X */}
-  <a
-    href="https://x.com/RASISUDAN1"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
-    title="تويتر / X منصة"
-  >
-    <span>📣</span>
-    <span>X (تويتر)</span>
-  </a>
+          <div className="flex items-center justify-center gap-3">
+            {/* تويتر / X */}
+            <a
+              href="https://x.com/RASISUDAN1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+              title="تويتر / X منصة"
+            >
+              <span>📣</span>
+              <span>X (تويتر)</span>
+            </a>
 
-  {/* فيسبوك */}
-  <a
-    href="https://www.facebook.com/profile.php?id=61595056197520"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
-    title="فيسبوك"
-  >
-    <span>📘</span>
-    <span>فيسبوك</span>
-  </a>
+            {/* فيسبوك */}
+            <a
+              href="https://www.facebook.com/profile.php?id=61595056197520"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+              title="فيسبوك"
+            >
+              <span>📘</span>
+              <span>فيسبوك</span>
+            </a>
 
-  {/* انستغرام */}
-  <a
-    href="https://www.instagram.com/rasid.sudan?stkn=emNiMmFzMzVpZXE5"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
-    title="انستغرام"
-  >
-    <span>📷</span>
-    <span>انستغرام</span>
-  </a>
-</div>
+            {/* انستغرام */}
+            <a
+              href="https://www.instagram.com/rasid.sudan?stkn=emNiMmFzMzVpZXE5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+              title="انستغرام"
+            >
+              <span>📷</span>
+              <span>انستغرام</span>
+            </a>
+          </div>
         </div>
 
         {/* شريط الحقوق والأمان */}
