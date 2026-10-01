@@ -1,116 +1,122 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
-// مكون الأنيميشن للخطوات
-function HowToReportAnimated() {
-  const [activeStep, setActiveStep] = useState(0);
+// مكون المرشد السوداني الكرتوني (الشخصية بالجلابية والعمة)
+function SudaneseAvatarGuide() {
+  const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
     {
-      id: '01',
-      title: '1. اضغط على "تقديم بلاغ"',
-      desc: 'انقر على زر تقديم / متابعة بلاغ للبدء في تعبئة الاستمارة الآمنة.',
+      title: 'يا زول مرحب بيك!',
+      dialogue: 'عايز تبلغ عن أي تجاوز؟ الموضوع بسيط وسري جداً.. اضغط على زر "تقديم / متابعة بلاغ".',
+      actionText: '1. اضغط على تقديم بلاغ',
       icon: '📝',
     },
     {
-      id: '02',
-      title: '2. أدخل تفاصيل البلاغ',
-      desc: 'اكتب تفاصيل واضحة عن حالة الفساد، حدد الموقع، وأرفق أي أدلة إن وجدت.',
+      title: 'اكتب التفاصيل',
+      dialogue: 'ادخل الموقع، واكتب الحصل شنو بالضبط، ولو عندك صورة أو ملف مرفق ارفقو هنا.',
+      actionText: '2. عبّي البيانات والمرفقات',
       icon: '📂',
     },
     {
-      id: '03',
-      title: '3. احفظ الرمز المرجعي الفريد',
-      desc: 'سيُنشئ النظام رمزاً مرجعياً خاصاً بك لتتمكن من متابعة حالة البلاغ بسريّة تامّة.',
+      title: 'شيل الرمز المرجعي',
+      dialogue: 'أهم خطوة! أول ما تخلص حيظهر ليك رمز مرجعي فريد، احفظو عندك كويس عشان تتابع بيهو.',
+      actionText: '3. احفظ الرمز المرجعي',
       icon: '🔑',
     },
     {
-      id: '04',
-      title: '4. متابعة الإجراءات والردود',
-      desc: 'يمكنك استخدام الرمز المرجعي في أي وقت لمعرفة ردود الإدارة والقرارات المتخذة.',
+      title: 'تابع بلاغك بأمان',
+      dialogue: 'في أي وقت ادخل الرمز المرجعي عشان تشوف رد الإدارة والإجراءات المتخذة بسريّة تامّة!',
+      actionText: '4. متابعة حالة البلاغ',
       icon: '🛡️',
     },
   ];
 
-  // حركة تنقل تلقائية بين الخطوات
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % steps.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [steps.length]);
-
   return (
-    <section className="py-16 px-4 bg-slate-950/80 border-y border-slate-800/80 dir-rtl my-8">
-      <div className="max-w-5xl mx-auto space-y-10">
+    <section className="py-12 px-4 my-8 relative">
+      <div className="max-w-4xl mx-auto bg-slate-900/90 border border-amber-500/30 rounded-3xl p-6 md:p-10 shadow-2xl shadow-amber-500/5 relative overflow-hidden backdrop-blur-md">
         
-        {/* عنوان قسم الأنيميشن */}
-        <div className="text-center space-y-3">
-          <span className="text-blue-400 font-bold text-xs bg-blue-500/10 border border-blue-500/20 px-3.5 py-1.5 rounded-full inline-block">
-            ⚡ كيف تعمل المنصة؟
+        {/* خلفية بنقوش هندسية سودانية خفيفة */}
+        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
+
+        {/* عنوان القسم */}
+        <div className="text-center mb-8 space-y-2 relative z-10">
+          <span className="text-amber-400 font-bold text-xs bg-amber-500/10 border border-amber-500/30 px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5">
+            <span>🇸🇩</span> المرشد التفاعلي
           </span>
-          <h2 className="text-2xl md:text-3xl font-black text-white">
-            خطوات تقديم ومتابعة بلاغك بسهولة
-          </h2>
-          <p className="text-slate-400 text-xs md:text-sm max-w-lg mx-auto">
-            تضمن منصة راصد سرية بياناتك وتوفر تجربة سلسة وسريعة لتوثيق وتتبع التجاوزات.
+          <h3 className="text-2xl md:text-3xl font-black text-white">
+            كيف تقوم بتقديم ومتابعة بلاغك؟
+          </h3>
+          <p className="text-slate-400 text-xs md:text-sm">
+            شاهد الشرح التفاعلي خطوة بخطوة مع المرشد السوداني
           </p>
         </div>
 
-        {/* كروت الخطوات المتحركة */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-          {steps.map((step, idx) => {
-            const isActive = activeStep === idx;
-            return (
-              <div
-                key={step.id}
-                onClick={() => setActiveStep(idx)}
-                className={`cursor-pointer rounded-2xl p-6 transition-all duration-500 relative border ${
-                  isActive
-                    ? 'bg-slate-900 border-blue-500 shadow-xl shadow-blue-500/10 scale-105 z-10'
-                    : 'bg-slate-900/40 border-slate-800/80 hover:border-slate-700 opacity-70'
-                }`}
-              >
-                {/* خط إضاءة يتحرك مع الكرت النشط */}
-                {isActive && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-2xl animate-pulse" />
-                )}
-
-                <div className="flex items-center justify-between mb-4">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-transform duration-500 ${
-                      isActive ? 'scale-110 bg-slate-800 border border-blue-500/30' : 'bg-slate-800/50'
-                    }`}
-                  >
-                    {step.icon}
-                  </div>
-                  <span className="text-slate-600 font-mono font-black text-lg">
-                    {step.id}
-                  </span>
-                </div>
-
-                <h3 className="text-white font-bold text-sm mb-2">{step.title}</h3>
-                <p className="text-slate-400 text-xs leading-relaxed">{step.desc}</p>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10">
+          
+          {/* جانب الشخصية الكرتونية والفقاعة الكلامية */}
+          <div className="md:col-span-5 flex flex-col items-center justify-center text-center space-y-4">
+            <div className="relative w-48 h-48 md:w-56 md:h-56 bg-gradient-to-b from-amber-500/20 via-blue-600/10 to-slate-900 rounded-full border-2 border-amber-500/40 p-2 flex items-center justify-center shadow-inner overflow-hidden">
+              
+              {/* فقاعة كلام الشخصية (Speech Bubble) */}
+              <div className="absolute top-2 right-2 z-20 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs p-2.5 rounded-2xl rounded-bl-none shadow-xl max-w-[180px] text-right border border-amber-300 leading-snug">
+                "{steps[currentStep].dialogue}"
               </div>
-            );
-          })}
-        </div>
 
-        {/* مؤشر النقاط التفاعلي */}
-        <div className="flex justify-center items-center gap-2 pt-2">
-          {steps.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveStep(idx)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                activeStep === idx ? 'w-8 bg-blue-500' : 'w-2 bg-slate-700'
-              }`}
-            />
-          ))}
-        </div>
+              {/* فيديو المرشد السوداني */}
+              <video 
+                src="/sudanese-avatar.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
 
+            <div className="space-y-1">
+              <h4 className="font-extrabold text-amber-400 text-base flex items-center justify-center gap-1.5">
+                <span>المرشد السوداني</span>
+                <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md">راصد</span>
+              </h4>
+              <p className="text-slate-400 text-xs">اضغط على الخطوات بالجانب للاستماع للشرح</p>
+            </div>
+          </div>
+
+          {/* جانب أزرار الخطوات */}
+          <div className="md:col-span-7 space-y-3">
+            {steps.map((step, idx) => {
+              const isActive = currentStep === idx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentStep(idx)}
+                  className={`w-full text-right p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-3 ${
+                    isActive
+                      ? 'bg-amber-500/10 border-amber-500/80 text-white font-bold scale-[1.02] shadow-lg shadow-amber-500/10'
+                      : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xl p-2 rounded-xl ${isActive ? 'bg-amber-500/20' : 'bg-slate-800/50'}`}>
+                      {step.icon}
+                    </span>
+                    <span className="text-sm font-bold">{step.actionText}</span>
+                  </div>
+
+                  {isActive && (
+                    <span className="text-[11px] bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-lg">
+                      جاري الشرح...
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+        </div>
       </div>
     </section>
   );
@@ -118,20 +124,20 @@ function HowToReportAnimated() {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-900 text-white dir-rtl flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-white dir-rtl flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
       
       {/* شريط الملاحة العلوي (Navbar) */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           
-          {/* الشعار والاسم */}
+          {/* الشعار والهوية السودانية */}
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-600/30">
+            <div className="bg-gradient-to-br from-amber-500 to-amber-700 p-2.5 rounded-2xl shadow-lg shadow-amber-500/20">
               🛡️
             </div>
             <div>
-              <h1 className="font-black text-xl tracking-tight text-white">
-                منصة راصد <span className="text-blue-500 font-bold text-sm block md:inline">| السودان</span>
+              <h1 className="font-black text-xl tracking-tight text-white flex items-center gap-2">
+                منصة راصد <span className="text-amber-400 font-bold text-xs bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">السودان 🇸🇩</span>
               </h1>
             </div>
           </div>
@@ -139,7 +145,7 @@ export default function LandingPage() {
           {/* زر دخول الإدارة السريع */}
           <Link
             href="/admin"
-            className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-2 shadow-sm"
+            className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-2 shadow-sm hover:border-amber-500/40"
           >
             🔐 لوحة الإشراف
           </Link>
@@ -148,22 +154,22 @@ export default function LandingPage() {
 
       {/* القسم الرئيسي (Hero Section) */}
       <section className="relative overflow-hidden py-16 md:py-24 px-4 flex-1 flex items-center">
-        {/* خلفية تزيينية لمسات ضوئية */}
-        <div className="absolute top-1/4 right-1/2 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+        {/* خلفيات ضوئية بلمسات ذهبية وزرقاء */}
+        <div className="absolute top-1/4 right-1/2 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-4xl mx-auto text-center space-y-8 relative z-10">
           
           {/* شارة الترحيب */}
-          <div className="inline-flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 text-blue-400 text-xs font-bold px-4 py-2 rounded-full shadow-inner">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 bg-slate-900 border border-amber-500/30 text-amber-400 text-xs font-bold px-4 py-2 rounded-full shadow-inner">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             النظام الوطني المستقل لتوثيق وتتبع التجاوزات
           </div>
 
           {/* العنوان الرئيسي */}
           <h2 className="text-3xl md:text-6xl font-black text-white leading-tight md:leading-tight">
             صوتك أمان للمجتمع، <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-blue-400">
               وثّق وبَلّغ بشفافية وسريّة تامّة
             </span>
           </h2>
@@ -179,7 +185,7 @@ export default function LandingPage() {
             {/* زر تقديم / متابعة بلاغ */}
             <Link
               href="/report"
-              className="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-xl shadow-blue-600/25 transition transform active:scale-95 flex items-center justify-center gap-3 border border-blue-500/30"
+              className="w-full sm:w-auto flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-base px-8 py-4 rounded-2xl shadow-xl shadow-amber-500/20 transition transform active:scale-95 flex items-center justify-center gap-3 border border-amber-400/30"
             >
               📝 تقديم / متابعة بلاغ
             </Link>
@@ -187,7 +193,7 @@ export default function LandingPage() {
             {/* زر لوحة الإدارة */}
             <Link
               href="/admin"
-              className="w-full sm:w-auto flex-1 bg-slate-800 hover:bg-slate-700/80 text-slate-100 font-bold text-base px-8 py-4 rounded-2xl border border-slate-700 transition transform active:scale-95 flex items-center justify-center gap-3 shadow-lg"
+              className="w-full sm:w-auto flex-1 bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-bold text-base px-8 py-4 rounded-2xl border border-slate-700 transition transform active:scale-95 flex items-center justify-center gap-3 shadow-lg"
             >
               📊 دخول المشرفين
             </Link>
@@ -197,14 +203,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* قسم الأنيميشن التفاعلي: شرح خطوات التبليغ */}
-      <HowToReportAnimated />
+      {/* مكون المرشد التفاعلي الشخصية بالجلابية */}
+      <SudaneseAvatarGuide />
 
       {/* مميزات المنصة (Features Section) */}
-      <section className="bg-slate-950/60 py-12 px-4">
+      <section className="bg-slate-900/40 py-12 px-4 border-t border-slate-800/80">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
+          <div className="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 space-y-3">
             <div className="text-3xl">🔒</div>
             <h3 className="font-extrabold text-white text-base">سرية وأمان البيانات</h3>
             <p className="text-slate-400 text-xs leading-relaxed">
@@ -212,7 +218,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
+          <div className="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 space-y-3">
             <div className="text-3xl">🔍</div>
             <h3 className="font-extrabold text-white text-base">متابعة دقيقة بالرمز المرجعي</h3>
             <p className="text-slate-400 text-xs leading-relaxed">
@@ -220,7 +226,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
+          <div className="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 space-y-3">
             <div className="text-3xl">⚡</div>
             <h3 className="font-extrabold text-white text-base">معالجة وتقييم سريع</h3>
             <p className="text-slate-400 text-xs leading-relaxed">
@@ -238,12 +244,12 @@ export default function LandingPage() {
           {/* بيانات التأسيس والمؤسس */}
           <div className="space-y-2">
             <div className="flex items-center justify-center md:justify-start gap-2">
-              <span className="bg-blue-600/20 text-blue-400 border border-blue-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
                 تأسست عام 2026م
               </span>
             </div>
             <p className="text-sm font-bold text-slate-200">
-              تطوير وتأسيس: <span className="text-blue-400 font-extrabold">مجموعة رصد التطوعية</span>
+              تطوير وتأسيس: <span className="text-amber-400 font-extrabold">مجموعة رصد التطوعية</span>
             </p>
             <p className="text-xs text-slate-500">
               منصة سودانية مستقلة تهدف لترسيخ الشفافية والعدالة.
@@ -257,7 +263,7 @@ export default function LandingPage() {
               href="https://x.com/RASISUDAN1"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+              className="bg-slate-900 hover:bg-amber-500/10 hover:border-amber-500/50 text-slate-300 hover:text-amber-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-800 transition flex items-center gap-2"
               title="تويتر / X منصة"
             >
               <span>📣</span>
@@ -269,7 +275,7 @@ export default function LandingPage() {
               href="https://www.facebook.com/profile.php?id=61595056197520"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+              className="bg-slate-900 hover:bg-amber-500/10 hover:border-amber-500/50 text-slate-300 hover:text-amber-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-800 transition flex items-center gap-2"
               title="فيسبوك"
             >
               <span>📘</span>
@@ -281,7 +287,7 @@ export default function LandingPage() {
               href="https://www.instagram.com/rasid.sudan?stkn=emNiMmFzMzVpZXE5"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+              className="bg-slate-900 hover:bg-amber-500/10 hover:border-amber-500/50 text-slate-300 hover:text-amber-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-800 transition flex items-center gap-2"
               title="انستغرام"
             >
               <span>📷</span>

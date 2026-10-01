@@ -453,7 +453,7 @@ export default function ReportPage() {
 
       {/* الفوتر السفلي */}
       <footer className="mt-12 text-center text-xs text-slate-500">
-        <p>© 2026 منصة راصد - معاذ الزين</p>
+        <p>© 2026 منصة راصد - تأسيس / مجموعة رصد التطوعية </p>
       </footer>
     </div>
   );
