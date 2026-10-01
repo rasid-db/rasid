@@ -1,328 +1,124 @@
 'use client';
 
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-const ENTITIES_LIST = [
-  'وزارة الدفاع',
-  'وزارة الداخلية',
-  'وزارة الخارجية',
-  'وزارة العدل',
-  'وزارة المالية والتخطيط الاقتصادي',
-  'وزارة الصحة',
-  'وزارة التربية والتعليم',
-  'وزارة التعليم العالي والبحث العلمي',
-  'وزارة الطاقة والنفت',
-  'وزارة المعادن',
-  'وزارة الزراعة والغابات',
-  'وزارة الثروة الحيوانية',
-  'وزارة التجارة والتموين',
-  'وزارة الصناعة',
-  'وزارة التنمية الاجتماعية',
-  'وزارة الاتصالات والتحول الرقمي',
-  'وزارة النقل',
-  'وزارة البنى التحتية والتنمية العمرانية',
-  'وزارة الثقافة والإعلام',
-  'وزارة الشباب والرياضة',
-  'بنك السودان المركزي',
-  'ديوان النائب العام',
-  'السلطة القضائية',
-  'حكومة ولاية (إقليم آخر)',
-  'جهة أخرى / هيئة مستقلة'
-];
-
-const CATEGORIES_LIST = [
-  'فساد مالي واختلاس أموال عامة',
-  'رشوة، ابتزاز، واستغلال النفوذ',
-  'تزوير مستندات ورسمية وإحتيال إداري',
-  'مخالفات الشراء والتعاقدات والعطاءات الحكومية',
-  'تهريب واستغلال موارد الدولة (ذهب، نفط، عملات)',
-  'تعدي واستيلاء غير مشروع على الأراضي والعقارات الحكومية',
-  'انتهاكات حقوق الإنسان وإساءة استخدام السلطة الأمنية/الشرطية',
-  'جرائم إلكترونية اختراق بيانات وشبكات حكومية',
-  'سوء إداري وتوظيف قائم على المحسوبية والتمكين',
-  'إهمال جسيم في تقديم الخدمات الأساسية (صحة، تعليم، مياه، كهرباء)',
-  'مخالفات وتعديات بيئية وصحية خطر على السلامة العامة'
-];
-
-export default function Home() {
-  const [tab, setTab] = useState<'submit' | 'track'>('submit');
-  const [category, setCategory] = useState('');
-  const [entity, setEntity] = useState('');
-  const [details, setDetails] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [trackingCode, setTrackingCode] = useState('');
-  const [submittedCode, setSubmittedCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState('');
-  const [trackResult, setTrackResult] = useState<any>(null);
-  const [trackError, setTrackError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!file) {
-      alert('يرجى إرفاق الدليل (صورة، فيديو، أو مستند) لإتمام إرسال البلاغ.');
-      return;
-    }
-
-    setLoading(true);
-    setUploadProgress('جاري رفع الدليل المرفق...');
-
-    try {
-      // 1. رفع الملف إلى Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      const filePath = `evidence/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('reports-evidence')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      // الحصول على رابط الملف المرفوع
-      const { data: publicUrlData } = supabase.storage
-        .from('reports-evidence')
-        .getPublicUrl(filePath);
-
-      const evidenceUrl = publicUrlData.publicUrl;
-
-      // 2. إنشاء رمز المتابعة وحفظ البلاغ في جدول reports
-      setUploadProgress('جاري حفظ البلاغ وتشفير البيانات...');
-      const code = 'RASED-' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-
-      const { error: insertError } = await supabase.from('reports').insert([
-        {
-          tracking_code: code,
-          category,
-          entity,
-          details,
-          evidence_url: evidenceUrl,
-          status: 'قيد المراجعة'
-        }
-      ]);
-
-      if (insertError) throw insertError;
-
-      setSubmittedCode(code);
-    } catch (error: any) {
-      console.error(error);
-      alert('حدث خطأ أثناء رفع الدليل أو تسجيل البلاغ. يرجى المحاولة مرة أخرى.');
-    } finally {
-      setLoading(false);
-      setUploadProgress('');
-    }
-  };
-
-  const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTrackResult(null);
-    setTrackError('');
-    if (!trackingCode.trim()) return;
-
-    setLoading(true);
-    // جلب حالة البلاغ والملاحظات بالإضافة لاسم المشرف الذي عالج البلاغ
-    const { data, error } = await supabase
-      .from('reports')
-      .select('status, admin_notes, admin_name, created_at')
-      .eq('tracking_code', trackingCode.trim())
-      .single();
-
-    setLoading(false);
-    if (error || !data) {
-      setTrackError('لم يتم العثور على بلاغ بهذا الرمز المرجعي.');
-    } else {
-      setTrackResult(data);
-    }
-  };
-
+export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 dir-rtl">
-      <div className="max-w-2xl mx-auto">
-        <header className="text-center mb-8 border-b border-slate-300 pb-4">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">🛡️ منصة راصد - السودان</h1>
-          <p className="text-slate-600">نظام بلاغات متخصص لتوثيق وتتبع المخالفات والتجاوزات القانونية</p>
-        </header>
+    <div className="min-h-screen bg-slate-900 text-white dir-rtl flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+      
+      {/* شريط الملاحة العلوي (Navbar) */}
+      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          
+          {/* الشعار والاسم */}
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-600/30">
+              🛡️
+            </div>
+            <div>
+              <h1 className="font-black text-xl tracking-tight text-white">
+                منصة راصد <span className="text-blue-500 font-bold text-sm block md:inline">| السودان</span>
+              </h1>
+            </div>
+          </div>
 
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setTab('submit')}
-            className={`flex-1 py-3 font-bold rounded-lg transition ${tab === 'submit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}
+          {/* زر دخول الإدارة السريع */}
+          <Link
+            href="/admin"
+            className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-2 shadow-sm"
           >
-            تقديم بلاغ جديد
-          </button>
-          <button
-            onClick={() => setTab('track')}
-            className={`flex-1 py-3 font-bold rounded-lg transition ${tab === 'track' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}
-          >
-            متابعة حالة بلاغ
-          </button>
+            🔐 لوحة الإشراف
+          </Link>
         </div>
+      </header>
 
-        {tab === 'submit' && (
-          <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-            {submittedCode ? (
-              <div className="text-center space-y-4">
-                <h2 className="text-2xl font-bold text-green-600">✅ تم تسجيل البلاغ وإرفاق الدليل بنجاح!</h2>
-                <p className="text-slate-600">احفظ الرمز المرجعي التالي لمتابعة حالة البلاغ لاحقاً:</p>
-                <div className="bg-slate-100 p-4 rounded-lg border border-slate-300 text-red-600 font-mono text-xl font-bold tracking-widest">
-                  {submittedCode}
-                </div>
-                <p className="text-xs text-slate-500">تنبيه: لا يتم حفظ أي بيانات شخصية أو عناوين IP ضماناً للسرية التامة.</p>
-                <button
-                  onClick={() => { setSubmittedCode(null); setCategory(''); setEntity(''); setDetails(''); setFile(null); }}
-                  className="mt-4 w-full bg-slate-800 text-white py-2 rounded-lg font-bold"
-                >
-                  تقديم بلاغ آخر
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block font-bold mb-1">الجهة المعنية / الوزارة:</label>
-                  <select
-                    value={entity}
-                    onChange={(e) => setEntity(e.target.value)}
-                    required
-                    className="w-full p-3 border border-slate-300 rounded-lg bg-white"
-                  >
-                    <option value="">اختر الوزارة أو الهيئة...</option>
-                    {ENTITIES_LIST.map((item, idx) => (
-                      <option key={idx} value={item}>{item}</option>
-                    ))}
-                  </select>
-                </div>
+      {/* القسم الرئيسي (Hero Section) */}
+      <section className="relative overflow-hidden py-16 md:py-24 px-4 flex-1 flex items-center">
+        {/* خلفية تزيينية لمسات ضوئية */}
+        <div className="absolute top-1/4 right-1/2 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
 
-                <div>
-                  <label className="block font-bold mb-1">نوع المخالفة / الخرق القانوني:</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    required
-                    className="w-full p-3 border border-slate-300 rounded-lg bg-white"
-                  >
-                    <option value="">اختر تصنيف المخالفة...</option>
-                    {CATEGORIES_LIST.map((item, idx) => (
-                      <option key={idx} value={item}>{item}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1">تفاصيل الواقعة والأدلة:</label>
-                  <textarea
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                    placeholder="اشرح الواقعة بالتفصيل (الأشخاص المعنيين، الزمان، المكان، أو أي معطيات تدعم البلاغ)..."
-                    required
-                    rows={4}
-                    className="w-full p-3 border border-slate-300 rounded-lg"
-                  ></textarea>
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1">
-                    إرفاق الدليل (إجباري) <span className="text-red-600">*</span>
-                  </label>
-                  <p className="text-xs text-slate-500 mb-2">
-                    يرجى إرفاق صورة، فيديو، تسجيل صوتي، أو وثيقة (PDF, Word) تؤكد الواقعة.
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*,video/*,application/pdf,.doc,.docx"
-                    required
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="w-full p-2 border border-slate-300 rounded-lg bg-slate-50 text-sm cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700"
-                  />
-                  {file && (
-                    <p className="text-xs text-green-600 font-bold mt-1">
-                      📄 تم اختيار الملف: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-                >
-                  {loading ? (uploadProgress || 'جاري الإرسال...') : 'إرسال البلاغ والدليل بشكل آمن'}
-                </button>
-              </form>
-            )}
+        <div className="max-w-4xl mx-auto text-center space-y-8 relative z-10">
+          
+          {/* شارة الترحيب */}
+          <div className="inline-flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 text-blue-400 text-xs font-bold px-4 py-2 rounded-full shadow-inner">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            النظام الوطني المستقل لتوثيق وتتبع التجاوزات
           </div>
-        )}
 
-        {tab === 'track' && (
-          <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-            <form onSubmit={handleTrack} className="space-y-4">
-              <div>
-                <label className="block font-bold mb-1">أدخل الرمز المرجعي للبلاغ:</label>
-                <input
-                  type="text"
-                  value={trackingCode}
-                  onChange={(e) => setTrackingCode(e.target.value)}
-                  placeholder="مثال: RASED-1234-ABCD"
-                  required
-                  className="w-full p-3 border border-slate-300 rounded-lg font-mono text-center text-lg uppercase"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition disabled:opacity-50"
-              >
-                {loading ? 'جاري البحث...' : 'استعلام عن البلاغ'}
-              </button>
-            </form>
+          {/* العنوان الرئيسي */}
+          <h2 className="text-3xl md:text-6xl font-black text-white leading-tight md:leading-tight">
+            صوتك أمان للمجتمع، <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400">
+              وثّق وبَلّغ بشفافية وسريّة تامّة
+            </span>
+          </h2>
 
-            {trackError && (
-              <p className="mt-4 text-center text-red-600 font-bold">{trackError}</p>
-            )}
+          {/* الوصف */}
+          <p className="text-slate-400 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed">
+            منصة متخصصة تمكّن المواطنين والراصدين من تقديم البلاغات حول المخالفات والتجاوزات بسهولة مع إمكانية متابعة حالة البلاغ عبر رمز مرجعي خاص دون المساس بالخصوصية.
+          </p>
 
-            {trackResult && (
-              <div className="mt-6 p-4 bg-slate-50 border border-slate-300 rounded-lg space-y-3 text-right">
-                <p className="text-sm">
-                  <strong>حالة البلاغ:</strong>{' '}
-                  <span className="text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-                    {trackResult.status || 'قيد المراجعة'}
-                  </span>
-                </p>
+          {/* أزرار التوجيه الرئيسية */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+            
+            {/* زر تقديم/متابعة بلاغ */}
+            <Link
+              href="/report"
+              className="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-xl shadow-blue-600/25 transition transform active:scale-95 flex items-center justify-center gap-3 border border-blue-500/30"
+            >
+              📝 تقديم / متابعة بلاغ
+            </Link>
 
-                {trackResult.admin_name && (
-                  <p className="text-sm">
-                    <strong>المشرف المستلم للبلاغ:</strong>{' '}
-                    <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
-                      👤 {trackResult.admin_name}
-                    </span>
-                  </p>
-                )}
+            {/* زر لوحة الإدارة */}
+            <Link
+              href="/admin"
+              className="w-full sm:w-auto flex-1 bg-slate-800 hover:bg-slate-700/80 text-slate-100 font-bold text-base px-8 py-4 rounded-2xl border border-slate-700 transition transform active:scale-95 flex items-center justify-center gap-3 shadow-lg"
+            >
+              📊 دخول المشرفين
+            </Link>
 
-                <p className="text-sm">
-                  <strong>تاريخ التقديم:</strong>{' '}
-                  <span className="text-slate-700 font-medium">
-                    {new Date(trackResult.created_at).toLocaleDateString('ar-EG')}
-                  </span>
-                </p>
-
-                <div className="pt-2 border-t border-slate-200">
-                  <p className="text-sm font-bold mb-1">ملاحظات المراجعة:</p>
-                  <p className="text-sm text-slate-800 bg-white p-3 rounded-lg border border-slate-200 leading-relaxed">
-                    {trackResult.admin_notes || 'لا توجد ملاحظات إضافية حالياً.'}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
-        )}
-      </div>
-    </main>
+
+        </div>
+      </section>
+
+      {/* مميزات المنصة (Features Section) */}
+      <section className="bg-slate-950/60 border-t border-slate-800/80 py-12 px-4">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
+            <div className="text-3xl">🔒</div>
+            <h3 className="font-extrabold text-white text-base">سرية وأمان البيانات</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              تضمن المنصة حماية هوية الراصد وتوفير بيئة آمنة لتقديم المستندات والبيانات.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
+            <div className="text-3xl">🔍</div>
+            <h3 className="font-extrabold text-white text-base">متابعة دقيقة بالرمز المرجعي</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              احصل على رمز مرجعي فريد لمتابعة مراحل معالجة بلاغك والاطلاع على ردود الإدارة.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-3">
+            <div className="text-3xl">⚡</div>
+            <h3 className="font-extrabold text-white text-base">معالجة وتقييم سريع</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              فريق إشرافي مختص يراجع البلاغات ويتخذ الإجراءات المناسبة لكل حالة.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* الفوتر (Footer) */}
+      <footer className="border-t border-slate-800/60 py-6 text-center text-slate-500 text-xs">
+        <p>© {new Date().getFullYear()} منصة راصد - جميع الحقوق محفوظة</p>
+      </footer>
+
+    </div>
   );
 }
