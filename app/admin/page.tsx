@@ -73,19 +73,19 @@ export default function AdminDashboard() {
     const { error } = await supabase
       .from('reports')
       .update({ 
-        status, 
-        admin_notes,
-        admin_name: currentAdmin // تسجيل المشرف الذي قام بالرد
+        status: status, 
+        admin_notes: admin_notes,
+        admin_name: currentAdmin // تسجيل المشرف الحالي الذي قام بالرد
       })
       .eq('id', id);
 
     setUpdatingId(null);
 
     if (error) {
-      alert('حدث خطأ أثناء حفظ التغييرات');
+      alert('حدث خطأ أثناء حفظ التغييرات: ' + error.message);
     } else {
       alert(`تم تحديث البلاغ بواسطة (${currentAdmin}) بنجاح!`);
-      fetchReports();
+      fetchReports(); // إعادة جلب البيانات لتحديث العرض فوراً
     }
   };
 
@@ -230,6 +230,12 @@ function ReportCard({
 }) {
   const [status, setStatus] = useState(report.status || 'قيد المراجعة');
   const [notes, setNotes] = useState(report.admin_notes || '');
+
+  // تحديث حالة ومدخلات الكارت إذا تغيرت بيانات البلاغ من الخارج
+  useEffect(() => {
+    setStatus(report.status || 'قيد المراجعة');
+    setNotes(report.admin_notes || '');
+  }, [report]);
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 text-right">
