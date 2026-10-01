@@ -22,7 +22,7 @@ const MINISTRIES = [
   'وزارة البنية التحتية والنقل',
   'وزارة العدل',
   'وزارة الداخلية والأمن الداخلي',
-  'وزارة الإعلام والثقافة',
+  'وزارة الإعلام وثقافة',
   'وزارة التجارة والصناعة',
   'وزارة العمل والإصلاح الإداري',
   'المجالس والمؤسسات الولائية / المحليات',
@@ -57,6 +57,7 @@ export default function ReportPage() {
   const [reporterName, setReporterName] = useState('');
   const [reporterPhone, setReporterPhone] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false); // حالة التعهد والشروط القانونية
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedCode, setSubmittedCode] = useState<string | null>(null);
@@ -81,6 +82,8 @@ export default function ReportPage() {
   // إرسال البلاغ
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreedToTerms) return;
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -132,6 +135,7 @@ export default function ReportPage() {
       setReporterName('');
       setReporterPhone('');
       setFile(null);
+      setAgreedToTerms(false);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'حدث خطأ أثناء إرسال البلاغ. يرجى المحاولة لاحقاً.');
@@ -181,7 +185,7 @@ export default function ReportPage() {
             ← العودة للرئيسية
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-xl">🛡️️</span>
+            <span className="text-xl">🛡</span>
             <span className="font-black text-white text-lg">منصة راصد</span>
           </div>
         </div>
@@ -347,10 +351,30 @@ export default function ReportPage() {
                   />
                 </div>
 
+                {/* خيار التعهد والشروط القانونية */}
+                <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 space-y-2 mt-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-xs text-slate-300 leading-relaxed">
+                      أقّر وأتعهد بأن كافة المعلومات والمستندات المقدمة صحيحة ولست أهدف منها للتشهير أو البلاغ الكيدي، وأوافق على{' '}
+                      <Link href="/terms" target="_blank" className="text-blue-400 underline font-bold hover:text-blue-300">
+                        الشروط وإخلاء المسؤولية القانونية
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white font-black py-4 rounded-xl transition shadow-lg mt-4"
+                  disabled={isSubmitting || !agreedToTerms}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl transition shadow-lg mt-4 cursor-pointer"
                 >
                   {isSubmitting ? 'جاري إرسال البلاغ...' : '🚀 إرسال البلاغ الآن'}
                 </button>
@@ -409,7 +433,9 @@ export default function ReportPage() {
 
                 <div className="border-b border-slate-800 pb-3">
                   <span className="text-slate-400 text-xs block mb-1">نوع الفساد والجهة:</span>
-                  <span className="text-slate-300">{trackedReport.category} - {trackedReport.location}</span>
+                  <span className="text-slate-300">
+                    {trackedReport.category} - {trackedReport.location}
+                  </span>
                 </div>
 
                 <div>
@@ -427,7 +453,7 @@ export default function ReportPage() {
 
       {/* الفوتر السفلي */}
       <footer className="mt-12 text-center text-xs text-slate-500">
-        <p>© 2026 منصة راصد - المؤسس: نهضة معاذ الزين</p>
+        <p>© 2026 منصة راصد - معاذ الزين</p>
       </footer>
     </div>
   );
