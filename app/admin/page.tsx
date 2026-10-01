@@ -1,340 +1,254 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// قائمة أسماء المشرفين المتاحين
-const ADMIN_NAMES = [
-  'المشرف أحمد',
-  'المشرف محمد',
-  'المشرفة سارة',
-  'المشرف عمر'
-];
-
-interface Report {
-  id: string;
-  tracking_code: string;
-  category: string;
-  entity: string;
-  details: string;
-  status: string;
-  admin_notes: string;
-  admin_name?: string;
-  evidence_url?: string;
-  created_at: string;
-}
-
-const STATUS_OPTIONS = [
-  'الكل',
-  'قيد المراجعة',
-  'قيد التحقيق',
-  'تم الاتخاذ والإحالة',
-  'مكتمل ومغلق',
-  'مرفوض / غير مستوفي'
+// قائمة المشرفين المصرح لهم
+const ADMINS = [
+  { id: '1', name: 'المشرف أحمد', pass: '1234' },
+  { id: '2', name: 'المشرف معاذ', pass: '5678' },
 ];
 
 export default function AdminDashboard() {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('الكل');
-  
-  // المشرف الحالي الذي يستعمل اللوحة
-  const [currentAdmin, setCurrentAdmin] = useState(ADMIN_NAMES[0]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(ADMINS[0].name);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('الكل');
+
+  // التحقق من وجود جلسة دخول سابقة
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('rasid_admin_auth');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+      fetchReports();
+    }
+  }, []);
 
   // جلب البلاغات من Supabase
   const fetchReports = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching reports:', error);
-      alert('حدث خطأ أثناء جلب البيانات');
-    } else {
-      setReports(data || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  // تحديث حالة البلاغ وتسجيل اسم المشرف المعالج تلقائياً
-  const handleUpdate = async (id: string, status: string, admin_notes: string) => {
-    setUpdatingId(id);
-    const { error } = await supabase
-      .from('reports')
-      .update({ 
-        status: status, 
-        admin_notes: admin_notes,
-        admin_name: currentAdmin // تسجيل المشرف الحالي الذي قام بالرد
-      })
-      .eq('id', id);
-
-    setUpdatingId(null);
-
-    if (error) {
-      alert('حدث خطأ أثناء حفظ التغييرات: ' + error.message);
-    } else {
-      alert(`تم تحديث البلاغ بواسطة (${currentAdmin}) بنجاح!`);
-      fetchReports(); // إعادة جلب البيانات لتحديث العرض فوراً
+      if (!error && data) {
+        setReports(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // حذف البلاغ
-  const handleDelete = async (id: string, trackingCode: string) => {
-    const confirmDelete = window.confirm(`هل أنت تأكد من رغبتك في حذف البلاغ رقم (${trackingCode}) نهائياً؟`);
-    if (!confirmDelete) return;
+  // تسجيل الدخول
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const adminObj = ADMINS.find((a) => a.name === selectedAdmin);
 
-    setUpdatingId(id);
-    const { error } = await supabase
-      .from('reports')
-      .delete()
-      .eq('id', id);
-
-    setUpdatingId(null);
-
-    if (error) {
-      alert('حدث خطأ أثناء حذف البلاغ');
+    if (adminObj && adminObj.pass === passwordInput) {
+      setIsAuthenticated(true);
+      localStorage.setItem('rasid_admin_auth', 'true');
+      localStorage.setItem('rasid_admin_name', selectedAdmin);
+      setAuthError('');
+      fetchReports();
     } else {
-      alert('تم حذف البلاغ بنجاح');
-      setReports(reports.filter(r => r.id !== id));
+      setAuthError('كلمة المرور غير صحيحة!');
     }
   };
 
-  // تصفية البلاغات بناءً على الحالة
-  const filteredReports = reports.filter((report) => {
-    if (selectedStatusFilter === 'الكل') return true;
-    return (report.status || 'قيد المراجعة') === selectedStatusFilter;
-  });
+  // تسجيل الخروج
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('rasid_admin_auth');
+    localStorage.removeItem('rasid_admin_name');
+    setPasswordInput('');
+  };
 
-  return (
-    <main className="min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 dir-rtl">
-      <div className="max-w-5xl mx-auto space-y-6">
-        
-        {/* الهيدر مع تحديد هوية المشرف الحالي */}
-        <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 flex items-center gap-2">
-              📊 لوحة إشراف ومتابعة البلاغات
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              مراجعة ومعالجة البلاغات الواردة
-            </p>
+  // 1. شاشة تسجيل الدخول إذا لم يكن المشرف مسجلاً
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4 dir-rtl">
+        <div className="bg-slate-800 border border-slate-700 p-8 rounded-3xl max-w-md w-full shadow-2xl space-y-6">
+          <div className="text-center space-y-2">
+            <div className="text-4xl">🔐</div>
+            <h1 className="text-2xl font-black">دخول المشرفين</h1>
+            <p className="text-xs text-slate-400">منطقة محظورة مخصصة للمصرح لهم فقط</p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* اختيار هوية المشرف */}
-            <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span className="text-xs font-bold text-slate-600">أنت تعمل بصفتك:</span>
+          <form onSubmit={handleLogin} className="space-y-4">
+            {authError && (
+              <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs p-3 rounded-xl text-center font-bold">
+                {authError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-2">اختر المشرف:</label>
               <select
-                value={currentAdmin}
-                onChange={(e) => setCurrentAdmin(e.target.value)}
-                className="bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 p-1.5 focus:outline-none"
+                value={selectedAdmin}
+                onChange={(e) => setSelectedAdmin(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"
               >
-                {ADMIN_NAMES.map((name) => (
-                  <option key={name} value={name}>{name}</option>
+                {ADMINS.map((admin) => (
+                  <option key={admin.id} value={admin.name}>
+                    {admin.name}
+                  </option>
                 ))}
               </select>
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-2">كلمة المرور / PIN:</label>
+              <input
+                type="password"
+                required
+                placeholder="أدخل كلمة المرور الخاصة بك"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 font-mono text-center tracking-widest"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg"
+            >
+              دخول اللوحة
+            </button>
+          </form>
+
+          <div className="text-center pt-2">
+            <Link href="/" className="text-xs text-slate-500 hover:text-slate-300 transition">
+              ← العودة للرئيسية
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // تصفية البلاغات حسب الحالة المختارة
+  const filteredReports =
+    statusFilter === 'الكل' ? reports : reports.filter((r) => r.status === statusFilter);
+
+  // 2. الشاشة الرئيسية للوحة عند النجاح في تسجيل الدخول
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-800 p-4 md:p-8 dir-rtl">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* الهيدر العلوي */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+              <span>📊</span> لوحة إشراف ومتابعة البلاغات
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">مراجعة ومعالجة البلاغات الواردة</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-2">
+              <span>أنت تعمل بصفتك:</span>
+              <span className="text-blue-600 font-black">{selectedAdmin}</span>
+            </div>
+
             <button
               onClick={fetchReports}
-              disabled={loading}
-              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-2 disabled:opacity-50"
+              className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5"
             >
-              🔄 {loading ? 'جاري التحميل...' : 'تحديث البيانات'}
+              <span>🔄</span> تحديث البيانات
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-4 py-2.5 rounded-xl transition"
+            >
+              تسجيل الخروج
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* شريط الفلترة */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center gap-2">
-          <span className="text-sm font-bold text-slate-700 ml-2">تصفية حسب الحالة:</span>
-          {STATUS_OPTIONS.map((statusOption) => {
-            const count = statusOption === 'الكل'
-              ? reports.length
-              : reports.filter(r => (r.status || 'قيد المراجعة') === statusOption).length;
-
-            return (
-              <button
-                key={statusOption}
-                onClick={() => setSelectedStatusFilter(statusOption)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                  selectedStatusFilter === statusOption
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                <span>{statusOption}</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  selectedStatusFilter === statusOption ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+        {/* أزرار الفلترة حسب الحالة */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-bold">
+          <span className="text-slate-400 whitespace-nowrap ml-2">تصفية حسب الحالة:</span>
+          {['الكل', 'قيد المراجعة', 'قيد التحقيق', 'تم الاتخاذ والإحالة', 'مكتمل ومغلق', 'مرفوض / غير مستوفي'].map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-4 py-2 rounded-xl transition whitespace-nowrap ${
+                statusFilter === st
+                  ? 'bg-slate-900 text-white shadow'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {st} ({st === 'الكل' ? reports.length : reports.filter((r) => r.status === st).length})
+            </button>
+          ))}
         </div>
 
         {/* قائمة البلاغات */}
-        {loading ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-            <p className="text-slate-500 font-bold">جاري تحميل البلاغات...</p>
-          </div>
-        ) : filteredReports.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-            <p className="text-slate-500 font-bold">
-              {selectedStatusFilter === 'الكل'
-                ? 'لا توجد بلاغات مسجلة حالياً.'
-                : `لا توجد بلاغات بحالة "${selectedStatusFilter}".`}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredReports.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                onUpdate={handleUpdate}
-                onDelete={handleDelete}
-                isUpdating={updatingId === report.id}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
-  );
-}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm min-h-[300px]">
+          {loading ? (
+            <div className="text-center py-12 text-slate-400 text-sm">جاري تحميل البلاغات...</div>
+          ) : filteredReports.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-sm">لا توجد بلاغات مسجلة حالياً.</div>
+          ) : (
+            <div className="space-y-4">
+              {filteredReports.map((report) => (
+                <div
+                  key={report.id}
+                  className="border border-slate-200 rounded-2xl p-4 hover:border-slate-300 transition bg-slate-50/50 space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                    <span className="font-mono font-bold text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
+                      {report.reference_code}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {new Date(report.created_at).toLocaleDateString('ar-EG')}
+                    </span>
+                  </div>
 
-// مكون كارت البلاغ
-function ReportCard({
-  report,
-  onUpdate,
-  onDelete,
-  isUpdating
-}: {
-  report: Report;
-  onUpdate: (id: string, status: string, notes: string) => void;
-  onDelete: (id: string, code: string) => void;
-  isUpdating: boolean;
-}) {
-  const [status, setStatus] = useState(report.status || 'قيد المراجعة');
-  const [notes, setNotes] = useState(report.admin_notes || '');
+                  <h3 className="font-black text-slate-900 text-base">{report.title}</h3>
 
-  // تحديث حالة ومدخلات الكارت إذا تغيرت بيانات البلاغ من الخارج
-  useEffect(() => {
-    setStatus(report.status || 'قيد المراجعة');
-    setNotes(report.admin_notes || '');
-  }, [report]);
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div>
+                      <span className="font-bold">نوع الفساد:</span> {report.category}
+                    </div>
+                    <div>
+                      <span className="font-bold">الموقع / الجهة:</span> {report.location}
+                    </div>
+                    <div>
+                      <span className="font-bold">المُبلّغ:</span> {report.reporter_name} ({report.reporter_phone || 'بدون رقم'})
+                    </div>
+                    <div>
+                      <span className="font-bold">الحالة:</span>{' '}
+                      <span className="bg-slate-200 px-2.5 py-0.5 rounded-md font-bold text-slate-800">
+                        {report.status || 'جديد'}
+                      </span>
+                    </div>
+                  </div>
 
-  return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 text-right">
-      
-      {/* أعلى الكارت */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="bg-slate-100 text-slate-800 font-mono font-bold px-3 py-1 rounded-lg text-sm border border-slate-300">
-            {report.tracking_code}
-          </span>
-          <span className="bg-red-50 text-red-600 font-bold px-3 py-1 rounded-lg text-xs border border-red-100">
-            {report.category || 'غير محدد'}
-          </span>
-          {report.admin_name && (
-            <span className="bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg text-xs border border-blue-100 flex items-center gap-1">
-              👤 تم التحديث بواسطة: {report.admin_name}
-            </span>
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
+                    {report.description}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400 font-medium">
-            {new Date(report.created_at).toLocaleString('ar-EG')}
-          </span>
-          <button
-            onClick={() => onDelete(report.id, report.tracking_code)}
-            disabled={isUpdating}
-            className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs font-bold transition border border-red-200"
-          >
-            🗑️ حذف
-          </button>
-        </div>
+
       </div>
-
-      {/* الجهة والتفاصيل */}
-      <div className="space-y-2">
-        <p className="text-sm font-bold text-slate-700">
-          الجهة المعنية: <span className="text-slate-900 font-extrabold">{report.entity || 'غير محددة'}</span>
-        </p>
-        
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">
-          {report.details}
-        </div>
-      </div>
-
-      {/* رابط الدليل المرفق إن وجد */}
-      {report.evidence_url && (
-        <div className="pt-1">
-          <a
-            href={report.evidence_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs px-4 py-2 rounded-xl border border-emerald-200 transition"
-          >
-            📁 فتح الدليل المرفق (صورة / مستند)
-          </a>
-        </div>
-      )}
-
-      {/* تحديث الحالة والملاحظات */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-        <div>
-          <label className="block text-xs font-bold text-slate-600 mb-1">
-            تحديث حالة البلاغ:
-          </label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none"
-          >
-            <option value="قيد المراجعة">قيد المراجعة</option>
-            <option value="قيد التحقيق">قيد التحقيق</option>
-            <option value="تم الاتخاذ والإحالة">تم الاتخاذ والإحالة</option>
-            <option value="مكتمل ومغلق">مكتمل ومغلق</option>
-            <option value="مرفوض / غير مستوفي">مرفوض / غير مستوفي</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-600 mb-1">
-            ملاحظات المراجعة (تظهر للراصد):
-          </label>
-          <input
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="أضف رد أو ملاحظة للراصد..."
-            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none"
-          />
-        </div>
-      </div>
-
-      <button
-        onClick={() => onUpdate(report.id, status, notes)}
-        disabled={isUpdating}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-sm disabled:opacity-50 mt-2"
-      >
-        {isUpdating ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-      </button>
-
     </div>
   );
 }
