@@ -134,38 +134,43 @@ export default function LandingPage() {
           </div>
 
           {/* روابط التواصل الاجتماعي */}
-          <div className="flex items-center justify-center gap-3">
-            <a
-              href="https://x.com/RASISUDAN1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
-              title="منصة X / تويتر"
-            >
-              🐦 X (تويتر)
-            </a>
+<div className="flex items-center justify-center gap-3">
+  {/* تويتر / X */}
+  <a
+    href="https://x.com/RASISUDAN1"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+    title="تويتر / X منصة"
+  >
+    <span>📣</span>
+    <span>X (تويتر)</span>
+  </a>
 
-            <a
-              href="https://facebook.comhttps://www.facebook.com/profile.php?id=61595056197520"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
-              title="فيسبوك"
-            >
-              📘 فيسبوك
-            </a>
+  {/* فيسبوك */}
+  <a
+    href="https://www.facebook.com/profile.php?id=61595056197520"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+    title="فيسبوك"
+  >
+    <span>📘</span>
+    <span>فيسبوك</span>
+  </a>
 
-            <a
-              href="https://www.instagram.com/rasid.sudan?stkn=emNiMmFzMzVpZXE5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-slate-900 hover:bg-emerald-600/20 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-400 p-3 rounded-xl border border-slate-800 transition shadow-sm text-sm"
-              title="انستغرام"
-            >
-              💬 انستغرام
-            </a>
-          </div>
-
+  {/* انستغرام */}
+  <a
+    href="https://www.instagram.com/rasid.sudan?stkn=emNiMmFzMzVpZXE5"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="bg-slate-900 hover:bg-blue-600/20 hover:border-blue-500/50 text-slate-300 hover:text-blue-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/80 transition flex items-center gap-2"
+    title="انستغرام"
+  >
+    <span>📷</span>
+    <span>انستغرام</span>
+  </a>
+</div>
         </div>
 
         {/* شريط الحقوق والأمان */}
