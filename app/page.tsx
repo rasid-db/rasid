@@ -104,7 +104,8 @@ export default function Home() {
           category,
           entity,
           details,
-          evidence_url: evidenceUrl
+          evidence_url: evidenceUrl,
+          status: 'قيد المراجعة'
         }
       ]);
 
@@ -127,9 +128,10 @@ export default function Home() {
     if (!trackingCode.trim()) return;
 
     setLoading(true);
+    // جلب حالة البلاغ والملاحظات بالإضافة لاسم المشرف الذي عالج البلاغ
     const { data, error } = await supabase
       .from('reports')
-      .select('status, admin_notes, created_at')
+      .select('status, admin_notes, admin_name, created_at')
       .eq('tracking_code', trackingCode.trim())
       .single();
 
@@ -269,7 +271,7 @@ export default function Home() {
                   onChange={(e) => setTrackingCode(e.target.value)}
                   placeholder="مثال: RASED-1234-ABCD"
                   required
-                  className="w-full p-3 border border-slate-300 rounded-lg font-mono text-center text-lg"
+                  className="w-full p-3 border border-slate-300 rounded-lg font-mono text-center text-lg uppercase"
                 />
               </div>
               <button
@@ -286,10 +288,36 @@ export default function Home() {
             )}
 
             {trackResult && (
-              <div className="mt-6 p-4 bg-slate-50 border border-slate-300 rounded-lg space-y-2">
-                <p><strong>حالة البلاغ:</strong> <span className="text-blue-600 font-bold">{trackResult.status}</span></p>
-                <p><strong>تاريخ التقديم:</strong> {new Date(trackResult.created_at).toLocaleDateString('ar-EG')}</p>
-                <p><strong>ملاحظات المراجعة:</strong> {trackResult.admin_notes || 'لا توجد ملاحظات إضافية حالياً.'}</p>
+              <div className="mt-6 p-4 bg-slate-50 border border-slate-300 rounded-lg space-y-3 text-right">
+                <p className="text-sm">
+                  <strong>حالة البلاغ:</strong>{' '}
+                  <span className="text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                    {trackResult.status || 'قيد المراجعة'}
+                  </span>
+                </p>
+
+                {trackResult.admin_name && (
+                  <p className="text-sm">
+                    <strong>المشرف المستلم للبلاغ:</strong>{' '}
+                    <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+                      👤 {trackResult.admin_name}
+                    </span>
+                  </p>
+                )}
+
+                <p className="text-sm">
+                  <strong>تاريخ التقديم:</strong>{' '}
+                  <span className="text-slate-700 font-medium">
+                    {new Date(trackResult.created_at).toLocaleDateString('ar-EG')}
+                  </span>
+                </p>
+
+                <div className="pt-2 border-t border-slate-200">
+                  <p className="text-sm font-bold mb-1">ملاحظات المراجعة:</p>
+                  <p className="text-sm text-slate-800 bg-white p-3 rounded-lg border border-slate-200 leading-relaxed">
+                    {trackResult.admin_notes || 'لا توجد ملاحظات إضافية حالياً.'}
+                  </p>
+                </div>
               </div>
             )}
           </div>

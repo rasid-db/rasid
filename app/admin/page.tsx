@@ -7,6 +7,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// قائمة أسماء المشرفين المتاحين
+const ADMIN_NAMES = [
+  'المشرف أحمد',
+  'المشرف محمد',
+  'المشرفة سارة',
+  'المشرف عمر'
+];
+
 interface Report {
   id: string;
   tracking_code: string;
@@ -15,6 +23,7 @@ interface Report {
   details: string;
   status: string;
   admin_notes: string;
+  admin_name?: string;
   evidence_url?: string;
   created_at: string;
 }
@@ -33,6 +42,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('الكل');
+  
+  // المشرف الحالي الذي يستعمل اللوحة
+  const [currentAdmin, setCurrentAdmin] = useState(ADMIN_NAMES[0]);
 
   // جلب البلاغات من Supabase
   const fetchReports = async () => {
@@ -55,12 +67,16 @@ export default function AdminDashboard() {
     fetchReports();
   }, []);
 
-  // تحديث حالة البلاغ والملاحظات
+  // تحديث حالة البلاغ وتسجيل اسم المشرف المعالج تلقائياً
   const handleUpdate = async (id: string, status: string, admin_notes: string) => {
     setUpdatingId(id);
     const { error } = await supabase
       .from('reports')
-      .update({ status, admin_notes })
+      .update({ 
+        status, 
+        admin_notes,
+        admin_name: currentAdmin // تسجيل المشرف الذي قام بالرد
+      })
       .eq('id', id);
 
     setUpdatingId(null);
@@ -68,7 +84,7 @@ export default function AdminDashboard() {
     if (error) {
       alert('حدث خطأ أثناء حفظ التغييرات');
     } else {
-      alert('تم تحديث حالة البلاغ بنجاح!');
+      alert(`تم تحديث البلاغ بواسطة (${currentAdmin}) بنجاح!`);
       fetchReports();
     }
   };
@@ -94,7 +110,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // تصفية البلاغات بناءً على الحالة المختارة
+  // تصفية البلاغات بناءً على الحالة
   const filteredReports = reports.filter((report) => {
     if (selectedStatusFilter === 'الكل') return true;
     return (report.status || 'قيد المراجعة') === selectedStatusFilter;
@@ -104,26 +120,43 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 dir-rtl">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* الهيدر */}
+        {/* الهيدر مع تحديد هوية المشرف الحالي */}
         <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 flex items-center gap-2">
               📊 لوحة إشراف ومتابعة البلاغات
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              مراجعة ومعالجة البلاغات الواردة بحرية وأمان
+              مراجعة ومعالجة البلاغات الواردة
             </p>
           </div>
-          <button
-            onClick={fetchReports}
-            disabled={loading}
-            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm flex items-center gap-2 disabled:opacity-50"
-          >
-            🔄 {loading ? 'جاري التحميل...' : 'تحديث البيانات'}
-          </button>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* اختيار هوية المشرف */}
+            <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-600">أنت تعمل بصفتك:</span>
+              <select
+                value={currentAdmin}
+                onChange={(e) => setCurrentAdmin(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 p-1.5 focus:outline-none"
+              >
+                {ADMIN_NAMES.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={fetchReports}
+              disabled={loading}
+              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              🔄 {loading ? 'جاري التحميل...' : 'تحديث البيانات'}
+            </button>
+          </div>
         </header>
 
-        {/* شريط الفلترة حسب الحالة */}
+        {/* شريط الفلترة */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center gap-2">
           <span className="text-sm font-bold text-slate-700 ml-2">تصفية حسب الحالة:</span>
           {STATUS_OPTIONS.map((statusOption) => {
@@ -201,7 +234,7 @@ function ReportCard({
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 text-right">
       
-      {/* أعلى الكارت: الرمز والتاريخ والحذف */}
+      {/* أعلى الكارت */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="bg-slate-100 text-slate-800 font-mono font-bold px-3 py-1 rounded-lg text-sm border border-slate-300">
@@ -210,6 +243,11 @@ function ReportCard({
           <span className="bg-red-50 text-red-600 font-bold px-3 py-1 rounded-lg text-xs border border-red-100">
             {report.category || 'غير محدد'}
           </span>
+          {report.admin_name && (
+            <span className="bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg text-xs border border-blue-100 flex items-center gap-1">
+              👤 تم التحديث بواسطة: {report.admin_name}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-slate-400 font-medium">
@@ -259,7 +297,7 @@ function ReportCard({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:outline-none"
+            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none"
           >
             <option value="قيد المراجعة">قيد المراجعة</option>
             <option value="قيد التحقيق">قيد التحقيق</option>
@@ -278,7 +316,7 @@ function ReportCard({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="أضف رد أو ملاحظة للراصد..."
-            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none"
+            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none"
           />
         </div>
       </div>
