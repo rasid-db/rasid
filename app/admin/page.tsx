@@ -158,7 +158,6 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 p-4 md:p-8 dir-rtl">
       <div className="max-w-6xl mx-auto space-y-6">
-        
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
@@ -224,7 +223,6 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
@@ -278,7 +276,6 @@ function AdminReportCardItem({ report, isUpdating, onSave }: { report: any; isUp
         </div>
       )}
 
-      {/* قسم اتخاذ الإجراء والرد المطلوب */}
       <div className="bg-white p-4 rounded-xl border border-slate-300 space-y-3 pt-3 mt-3 shadow-sm">
         <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">⚙️ اتخاذ إجراء المشرف:</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
