@@ -8,6 +8,129 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// 🔹 مكون بطاقة البلاغ المتفاعل (يتضمن اتخاذ الإجراءات والرد)
+function ReportCard({ report, onUpdate }: { report: any; onUpdate: () => void }) {
+  const [status, setStatus] = useState(report.status || 'جديد');
+  const [adminReply, setAdminReply] = useState(report.admin_reply || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdateReport = async () => {
+    setIsUpdating(true);
+    const { error } = await supabase
+      .from('reports')
+      .update({
+        status: status,
+        admin_reply: adminReply,
+      })
+      .eq('id', report.id);
+
+    setIsUpdating(false);
+
+    if (error) {
+      alert('حدث خطأ أثناء حفظ الإجراء: ' + error.message);
+    } else {
+      alert('تم تحديث حالة البلاغ والرد بنجاح!');
+      onUpdate();
+    }
+  };
+
+  return (
+    <div className="border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition bg-slate-50/50 space-y-4 shadow-sm">
+      {/* الهيدر: الرمز المرجعي والتاريخ */}
+      <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+        <span className="font-mono font-bold text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
+          {report.reference_code || 'بدون رمز'}
+        </span>
+        <span className="text-xs text-slate-400">
+          {new Date(report.created_at).toLocaleDateString('ar-EG')}
+        </span>
+      </div>
+
+      {/* عنوان البلاغ */}
+      <h3 className="font-black text-slate-900 text-base">{report.title}</h3>
+
+      {/* تفاصيل الميتا */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200/60">
+        <div><span className="font-bold text-slate-800">نوع الفساد:</span> {report.category || report.violation_type || 'غير محدد'}</div>
+        <div><span className="font-bold text-slate-800">الموقع / الجهة:</span> {report.entity || report.location || 'غير محدد'}</div>
+        <div>
+          <span className="font-bold text-slate-800">المُبلّغ:</span>{' '}
+          {report.reporter_name || 'مجهول'} ({report.reporter_phone || report.contact_number || 'بدون رقم'})
+        </div>
+      </div>
+
+      {/* نص البلاغ */}
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
+        <span className="font-bold block text-slate-900 mb-1">تفاصيل البلاغ:</span>
+        {report.description}
+      </div>
+
+      {/* عرض المرفقات إن وجدت */}
+      {(report.attachment_url || report.file_url) && (
+        <div className="pt-1">
+          <a
+            href={report.attachment_url || report.file_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-blue-700 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 font-bold"
+          >
+            📎 عرض المرفق / المستند
+          </a>
+        </div>
+      )}
+
+      {/* ⚙️ قسم اتخاذ الإجراءات والرد من المشرف */}
+      <div className="bg-slate-100/80 p-4 rounded-xl border border-slate-200/80 space-y-3 pt-3 mt-2">
+        <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+          <span>⚙️</span> اتخاذ إجراء وتحديد الحالة:
+        </h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* تغيير حالة البلاغ */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">حالة البلاغ الحالية:</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full bg-white border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="جديد">جديد</option>
+              <option value="قيد المراجعة">قيد المراجعة</option>
+              <option value="قيد التحقيق">قيد التحقيق</option>
+              <option value="تم الاتخاذ والإحالة">تم الاتخاذ والإحالة</option>
+              <option value="مكتمل ومغلق">مكتمل ومغلق</option>
+              <option value="مرفوض / غير مستوفي">مرفوض / غير مستوفي</option>
+            </select>
+          </div>
+
+          {/* نص رد الإدارة للمواطن */}
+          <div className="md:col-span-2">
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">رد المشرف (يظهر عند الاستعلام):</label>
+            <input
+              type="text"
+              value={adminReply}
+              onChange={(e) => setAdminReply(e.target.value)}
+              placeholder="اكتب الإجراء المتخذ أو الرد الرسمي هنا..."
+              className="w-full bg-white border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+        </div>
+
+        {/* زر تنفيذ وتحديث البلاغ */}
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={handleUpdateReport}
+            disabled={isUpdating}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow disabled:opacity-50 flex items-center gap-2"
+          >
+            {isUpdating ? 'جاري حفظ الإجراء...' : '💾 حفظ الإجراء والرد'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [email, setEmail] = useState('');
@@ -178,7 +301,7 @@ export default function AdminDashboard() {
         {/* أزرار التصفية */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-bold">
           <span className="text-slate-400 whitespace-nowrap ml-2">تصفية حسب الحالة:</span>
-          {['الكل', 'قيد المراجعة', 'قيد التحقيق', 'تم الاتخاذ والإحالة', 'مكتمل ومغلق', 'مرفوض / غير مستوفي'].map((st) => (
+          {['الكل', 'جديد', 'قيد المراجعة', 'قيد التحقيق', 'تم الاتخاذ والإحالة', 'مكتمل ومغلق', 'مرفوض / غير مستوفي'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
@@ -193,7 +316,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* قائمة البلاغات */}
+        {/* قائمة البلاغات مع بطاقات التحكم */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm min-h-[300px]">
           {loading ? (
             <div className="text-center py-12 text-slate-400 text-sm">جاري تحميل البلاغات...</div>
@@ -202,37 +325,7 @@ export default function AdminDashboard() {
           ) : (
             <div className="space-y-4">
               {filteredReports.map((report) => (
-                <div
-                  key={report.id}
-                  className="border border-slate-200 rounded-2xl p-4 hover:border-slate-300 transition bg-slate-50/50 space-y-3"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
-                    <span className="font-mono font-bold text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
-                      {report.reference_code}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {new Date(report.created_at).toLocaleDateString('ar-EG')}
-                    </span>
-                  </div>
-
-                  <h3 className="font-black text-slate-900 text-base">{report.title}</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-                    <div><span className="font-bold">نوع الفساد:</span> {report.category}</div>
-                    <div><span className="font-bold">الموقع / الجهة:</span> {report.location}</div>
-                    <div><span className="font-bold">المُبلّغ:</span> {report.reporter_name} ({report.reporter_phone || 'بدون رقم'})</div>
-                    <div>
-                      <span className="font-bold">الحالة:</span>{' '}
-                      <span className="bg-slate-200 px-2.5 py-0.5 rounded-md font-bold text-slate-800">
-                        {report.status || 'جديد'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
-                    {report.description}
-                  </div>
-                </div>
+                <ReportCard key={report.id} report={report} onUpdate={fetchReports} />
               ))}
             </div>
           )}
