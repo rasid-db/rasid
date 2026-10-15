@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  // ترك الكائن نظيفاً وبدون خيارات turbopack
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
