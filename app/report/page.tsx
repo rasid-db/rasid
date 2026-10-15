@@ -11,34 +11,73 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export default function PublicReportPage() {
   const [tab, setTab] = useState<'create' | 'track'>('create');
   
-  // نموذج التقديم
+  // بيانات نموذج التقديم
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('استغلال النفوذ والسلطة الوظيفية');
   const [entity, setEntity] = useState('');
   const [description, setDescription] = useState('');
   const [reporterName, setReporterName] = useState('');
   const [reporterPhone, setReporterPhone] = useState('');
+  
+  // المرفق والتعهد
+  const [file, setFile] = useState<File | null>(null);
+  const [agreedTerms, setAgreedTerms] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRefCode, setCreatedRefCode] = useState<string | null>(null);
 
-  // نموذج الاستعلام
+  // بيانات نموذج الاستعلام
   const [searchCode, setSearchCode] = useState('');
   const [trackedReport, setTrackedReport] = useState<any | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
 
-  // توليد رمز مرجعي عشوائي
   const generateRefCode = () => {
     return 'RSD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // التحقق المباشر من رفع المرفق والتعهد
+    if (!file) {
+      alert('يرجى إرفاق الدليل (صورة، فيديو، أو مستند) لإكمال تقديم البلاغ.');
+      return;
+    }
+
+    if (!agreedTerms) {
+      alert('يرجى القبول والتعهد بصحة البيانات وسياسة الخصوصية للتمكن من تقديم البلاغ.');
+      return;
+    }
+
     setIsSubmitting(true);
     setCreatedRefCode(null);
 
+    let attachmentUrl = '';
+
+    // 1. رفع المرفق إلى Supabase Storage إن أمكن
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const filePath = `reports/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, file);
+
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage
+          .from('attachments')
+          .getPublicUrl(filePath);
+        attachmentUrl = publicUrlData.publicUrl;
+      }
+    } catch (err) {
+      console.log('ملاحظة: تعذر الرفع التلقائي للـ Storage، سيتم الإرسال بدون رابط مباشر للملف.');
+    }
+
     const refCode = generateRefCode();
 
+    // 2. إدخال البلاغ إلى قاعدة البيانات
     const { error } = await supabase.from('reports').insert([
       {
         title,
@@ -48,6 +87,7 @@ export default function PublicReportPage() {
         reporter_name: reporterName || 'مجهول الهوية',
         reporter_phone: reporterPhone || null,
         reference_code: refCode,
+        attachment_url: attachmentUrl || file.name,
         status: 'جديد',
       },
     ]);
@@ -63,6 +103,8 @@ export default function PublicReportPage() {
       setDescription('');
       setReporterName('');
       setReporterPhone('');
+      setFile(null);
+      setAgreedTerms(false);
     }
   };
 
@@ -78,7 +120,7 @@ export default function PublicReportPage() {
       .from('reports')
       .select('*')
       .eq('reference_code', searchCode.trim().toUpperCase())
-      .single();
+      .maybeSingle();
 
     setIsSearching(false);
 
@@ -159,7 +201,7 @@ export default function PublicReportPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">نوع التجاوز</label>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">نوع التجاوز *</label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
@@ -197,6 +239,23 @@ export default function PublicReportPage() {
                   />
                 </div>
 
+                {/* إرفاق الدليل (واجب وضروري) */}
+                <div className="bg-slate-950 p-4 rounded-2xl border border-amber-500/30 space-y-2">
+                  <label className="block text-xs font-black text-amber-400 flex items-center gap-1.5">
+                    <span>📎</span> إرفاق الدليل والإثبات (صورة / فيديو / مستند) *
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    accept="image/*,video/*,.pdf,.doc,.docx"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-slate-400 file:mr-0 file:ml-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
+                  />
+                  <p className="text-[11px] text-slate-500">
+                    الحد الأقصى للملفات المدعومة: الصور، الفيديوهات، وملفات PDF. الإرفاق واجب لإكمال البلاغ.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1">اسم المُبلّغ (اختياري)</label>
@@ -221,12 +280,28 @@ export default function PublicReportPage() {
                   </div>
                 </div>
 
+                {/* خانة التعهد واختيار الشروط (واجبة) */}
+                <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={agreedTerms}
+                      onChange={(e) => setAgreedTerms(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-amber-500 rounded border-slate-700 bg-slate-900 cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300 leading-relaxed font-semibold">
+                      أتعهد بصحة وسلامة جميع المعلومات والمرفقات المقدمة في هذا البلاغ، وأتحمل كامل المسؤولية القانونية والأخلاقية، كما أوافق على <span className="text-amber-400 font-bold">سياسة الخصوصية واستخدام البيانات</span> الخاصة بمنصة راصد. *
+                    </span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-3 rounded-xl transition text-xs shadow-lg disabled:opacity-50"
+                  disabled={isSubmitting || !agreedTerms || !file}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-3.5 rounded-xl transition text-xs shadow-lg disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isSubmitting ? 'جاري إرسال البلاغ...' : '🚀 إرسال البلاغ الآن'}
+                  {isSubmitting ? 'جاري رفع الدليل وإرسال البلاغ...' : '🚀 إرسال البلاغ الرسمي'}
                 </button>
               </form>
             )}
@@ -277,6 +352,19 @@ export default function PublicReportPage() {
                 <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl">
                   {trackedReport.description}
                 </p>
+
+                {trackedReport.attachment_url && (
+                  <div className="pt-1">
+                    <a
+                      href={trackedReport.attachment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/30 font-bold"
+                    >
+                      📎 عرض الدليل والمرفق
+                    </a>
+                  </div>
+                )}
 
                 {/* رد الإدارة للمواطن */}
                 <div className="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-xl space-y-1">
