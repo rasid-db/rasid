@@ -214,7 +214,7 @@ export default function AdminDashboard() {
           ) : (
             <div className="space-y-4">
               {filteredReports.map((report) => (
-                <ReportRow
+                <AdminReportCardItem
                   key={report.id}
                   report={report}
                   isUpdating={updatingId === report.id}
@@ -230,9 +230,16 @@ export default function AdminDashboard() {
   );
 }
 
-function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: boolean; onSave: (status: string, reply: string) => void }) {
+function AdminReportCardItem({ report, isUpdating, onSave }: { report: any; isUpdating: boolean; onSave: (status: string, reply: string) => void }) {
   const [status, setStatus] = useState(report.status || 'جديد');
   const [reply, setReply] = useState(report.admin_reply || '');
+
+  useEffect(() => {
+    if (report) {
+      setStatus(report.status || 'جديد');
+      setReply(report.admin_reply || '');
+    }
+  }, [report]);
 
   return (
     <div className="border border-slate-200 rounded-2xl p-5 bg-slate-50/50 space-y-4 shadow-sm text-right dir-rtl">
@@ -258,7 +265,6 @@ function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: bo
         {report.description}
       </div>
 
-      {/* رابط المستندات والمرفقات إن وجدت */}
       {(report.attachment_url || report.file_url) && (
         <div className="pt-1">
           <a
@@ -272,6 +278,7 @@ function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: bo
         </div>
       )}
 
+      {/* قسم اتخاذ الإجراء والرد المطلوب */}
       <div className="bg-white p-4 rounded-xl border border-slate-300 space-y-3 pt-3 mt-3 shadow-sm">
         <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">⚙️ اتخاذ إجراء المشرف:</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -280,7 +287,7 @@ function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: bo
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 font-bold outline-none"
+              className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 font-bold outline-none cursor-pointer"
             >
               <option value="جديد">جديد</option>
               <option value="قيد المراجعة">قيد المراجعة</option>
