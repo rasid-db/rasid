@@ -241,7 +241,7 @@ function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: bo
           {report.reference_code || 'RSD-UNKNOWN'}
         </span>
         <span className="text-xs text-slate-400">
-          {new Date(report.created_at).toLocaleDateString('ar-EG')}
+          {report.created_at ? new Date(report.created_at).toLocaleDateString('ar-EG') : 'تاريخ غير محدد'}
         </span>
       </div>
 
@@ -251,12 +251,26 @@ function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: bo
         <div><span className="font-bold">نوع الفساد:</span> {report.category || report.violation_type || 'غير محدد'}</div>
         <div><span className="font-bold">الموقع / الجهة:</span> [{report.entity || 'غير محدد'}] {report.location || ''}</div>
         <div><span className="font-bold">المُبلّغ:</span> {report.reporter_name || 'أنت تعلم من'} ({report.reporter_phone || report.contact_number || 'بدون رقم'})</div>
-        <div><span className="font-bold">الحالة:</span> <span className="bg-slate-200 px-2 py-0.5 rounded font-bold">{report.status || 'جديد'}</span></div>
+        <div><span className="font-bold">الحالة الحالية:</span> <span className="bg-slate-200 px-2 py-0.5 rounded font-bold">{report.status || 'جديد'}</span></div>
       </div>
 
       <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
         {report.description}
       </div>
+
+      {/* رابط المستندات والمرفقات إن وجدت */}
+      {(report.attachment_url || report.file_url) && (
+        <div className="pt-1">
+          <a
+            href={report.attachment_url || report.file_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-blue-700 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 font-bold"
+          >
+            📎 عرض المرفق / المستند
+          </a>
+        </div>
+      )}
 
       <div className="bg-white p-4 rounded-xl border border-slate-300 space-y-3 pt-3 mt-3 shadow-sm">
         <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">⚙️ اتخاذ إجراء المشرف:</h4>
