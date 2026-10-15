@@ -3,8 +3,8 @@ import { Cairo } from "next/font/google";
 import "./globals.css";
 
 const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "600", "700", "800"],
+  subsets: ["arabic"],
+  display: "swap",
   variable: "--font-cairo",
 });
 
@@ -22,7 +22,7 @@ export default function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={`${cairo.variable} ${cairo.className} h-full antialiased`}
+      className={`${cairo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-slate-100 text-slate-900 font-sans">
         {children}
