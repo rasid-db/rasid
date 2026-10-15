@@ -18,6 +18,7 @@ export default function NewReportPage() {
   
   const [file, setFile] = useState<File | null>(null);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRefCode, setCreatedRefCode] = useState<string | null>(null);
@@ -99,7 +100,7 @@ export default function NewReportPage() {
     <div className="min-h-screen bg-slate-950 text-white dir-rtl text-right py-8 px-4 flex flex-col justify-between">
       <div className="max-w-2xl mx-auto w-full space-y-6">
         
-        {/* Header - نظيف وبدون تكرار */}
+        {/* Header */}
         <header className="flex items-center justify-between border-b border-slate-800/80 pb-4">
           <Link href="/" className="text-amber-400 font-black text-xl flex items-center gap-2">
             🛡️ منصة راصد
@@ -110,12 +111,12 @@ export default function NewReportPage() {
               🔍 متابعة بلاغ سابق
             </Link>
             <Link href="/admin" className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl border border-slate-700 font-bold">
-              🔐 دخول المشرفين
+              🔐 لوحة الإشراف
             </Link>
           </div>
         </header>
 
-        {/* نموذج تقديم البلاغ الرئيسي */}
+        {/* نموذج تقديم البلاغ */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-2xl">
           <h2 className="text-lg font-black text-amber-400 border-b border-slate-800 pb-3">
             📝 تقديم بلاغ جديد
@@ -198,7 +199,7 @@ export default function NewReportPage() {
                 />
               </div>
 
-              {/* إرفاق الدليل (واجب) */}
+              {/* إرفاق الدليل */}
               <div className="bg-slate-950 p-4 rounded-2xl border border-amber-500/30 space-y-2">
                 <label className="block text-xs font-black text-amber-400 flex items-center gap-1.5">
                   <span>📎</span> إرفاق الدليل والإثبات (صورة / فيديو / مستند) *
@@ -236,7 +237,7 @@ export default function NewReportPage() {
                 </div>
               </div>
 
-              {/* خانة التعهد واختيار الشروط (واجبة) */}
+              {/* التعهد والموافقات مع رابط منبثق للسياسة */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -247,7 +248,15 @@ export default function NewReportPage() {
                     className="mt-1 w-4 h-4 accent-amber-500 rounded border-slate-700 bg-slate-900 cursor-pointer"
                   />
                   <span className="text-xs text-slate-300 leading-relaxed font-semibold">
-                    أتعهد بصحة وسلامة جميع المعلومات والمرفقات المقدمة في هذا البلاغ، وأتحمل كامل المسؤولية القانونية والأخلاقية، كما أوافق على <span className="text-amber-400 font-bold">سياسة الخصوصية واستخدام البيانات</span> الخاصة بمنصة راصد. *
+                    أتعهد بصحة وسلامة جميع المعلومات والمرفقات المقدمة في هذا البلاغ، وأتحمل كامل المسؤولية القانونية والأخلاقية، كما أوافق على{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="text-amber-400 font-black underline hover:text-amber-300 transition"
+                    >
+                      سياسة الخصوصية واستخدام البيانات
+                    </button>{' '}
+                    الخاصة بمنصة راصد. *
                   </span>
                 </label>
               </div>
@@ -264,6 +273,52 @@ export default function NewReportPage() {
         </div>
 
       </div>
+
+      {/* النافذة المنبثقة (Modal) لشروط الخصوصية الاستخدام */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl text-right">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-black text-amber-400 text-base flex items-center gap-2">
+                <span>📜</span> سياسة الخصوصية وشروط استخدام منصة راصد
+              </h3>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-slate-400 hover:text-white font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-3 max-h-72 overflow-y-auto pl-2 leading-relaxed">
+              <p className="font-bold text-amber-300">1. سرية وحماية هوية المُبلّغ:</p>
+              <p>تضمن منصة راصد حماية وأمان هوية الراصد والمُبلّغ بالكامل دون مشاركتها مع أي طرف ثالث.</p>
+
+              <p className="font-bold text-amber-300">2. المسؤولية عن صحة البيانات:</p>
+              <p>يتحمل المُبلّغ كامل المسؤولية الأخلاقية والقانونية عن صحة المستندات والأدلة المرفقة مع البلاغ.</p>
+
+              <p className="font-bold text-amber-300">3. التعامل مع أدلة البلاغات:</p>
+              <p>تُحفظ كافة المستندات والمرفقات في خوادم مشفرة وآمنة لا تتاح إلا لفريق المراجعة والإشراف المخوّل.</p>
+
+              <p className="font-bold text-amber-300">4. المتابعة بالرمز المرجعي:</p>
+              <p>يتحمل الراصد مسؤولية الاحتفاظ بالرمز المرجعي الخاص بالبلاغ للاستعلام عن التحديثات.</p>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAgreedTerms(true);
+                  setShowPrivacyModal(false);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-5 py-2.5 rounded-xl transition shadow"
+              >
+                موافق والتزام بالشروط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
