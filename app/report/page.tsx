@@ -8,10 +8,59 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// قائمة شاملة بأنواع الجرائم والتجاوزات
+const violationCategories = [
+  'اختلاس المال العام والاعتداء عليه',
+  'الرشوة والتسهيلات غير المشروعة',
+  'استغلال النفوذ والسلطة الوظيفية',
+  'الابتزاز المالي والإداري',
+  'تزوير المستندات والمعاملات الرسمية',
+  'التلاعب بالمناقصات والمشتريات الحكومية',
+  'المحسوبية والمحاباة في التعيينات والترقيات',
+  'غسيل الأموال والممارسات المالية المشبوهة',
+  'تهريب واستغلال الموارد الوطنية',
+  'الإهمال والتقصير الجسيم المسبب لضرر عام',
+  'التمييز واستغلال المواطنين',
+  'جرائم وتجاوزات أخرى',
+];
+
+// قائمة بالوزارات والجهات الحكومية والسيادية الحالية في السودان
+const sudanMinistriesAndEntities = [
+  'وزارة الدفاع',
+  'وزارة الداخلية',
+  'وزارة الخارجية والتعاون الدولي',
+  'وزارة المالية والتخطيط الاقتصادي',
+  'وزارة العدل',
+  'وزارة الصحة',
+  'وزارة التربية والتعليم',
+  'وزارة التعليم العالي والبحث العلمي',
+  'وزارة الإعلام والثقافة والسياحة',
+  'وزارة الطاقة والنظر والمناجم',
+  'وزارة الزراعة والغابات',
+  'وزارة الثروة الحيوانية والسمكية',
+  'وزارة التنمية الاجتماعية',
+  'وزارة العمل والإصلاح الإداري',
+  'وزارة البنى التحتية والنقل',
+  'وزارة الاتصالات والتحول الرقمي',
+  'وزارة الحكم الاتحادي',
+  'وزارة الموارد المائية والري',
+  'وزارة الشباب والرياضة',
+  'مجلس السيادة الانتقالي',
+  'مجلس الوزراء',
+  'النيابة العامة',
+  'السلطة القضائية',
+  'بنك السودان المركزي',
+  'ديوان المراجعة القومي',
+  'الهيئة القومية للطرق والجسور',
+  'هيئة الموانئ البحرية',
+  'هيئة الطيران المدني',
+  'مؤسسة / هيئة ولائية محليّة أخرى',
+];
+
 export default function NewReportPage() {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('استغلال النفوذ والسلطة الوظيفية');
-  const [entity, setEntity] = useState('');
+  const [category, setCategory] = useState(violationCategories[0]);
+  const [entity, setEntity] = useState(sudanMinistriesAndEntities[0]);
   const [description, setDescription] = useState('');
   const [reporterName, setReporterName] = useState('');
   const [reporterPhone, setReporterPhone] = useState('');
@@ -87,7 +136,6 @@ export default function NewReportPage() {
     } else {
       setCreatedRefCode(refCode);
       setTitle('');
-      setEntity('');
       setDescription('');
       setReporterName('');
       setReporterPhone('');
@@ -154,36 +202,42 @@ export default function NewReportPage() {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="مثال: تجاوز في إجراءات التعيين..."
+                  placeholder="مثال: تجاوز في إجراءات التعيين والمشتريات..."
                   className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* قائمة أنواع التجاوزات والجرائم */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">نوع التجاوز *</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">نوع التجاوز / الجريمة *</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                    className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 cursor-pointer"
                   >
-                    <option value="استغلال النفوذ والسلطة الوظيفية">استغلال النفوذ والسلطة الوظيفية</option>
-                    <option value="الرشوة والابتزاز المالي">الرشوة والابتزاز المالي</option>
-                    <option value="تبديد المال العام">تبديد المال العام</option>
-                    <option value="تجاوزات أخرى">تجاوزات أخرى</option>
+                    {violationCategories.map((item, index) => (
+                      <option key={index} value={item} className="bg-slate-900 text-white">
+                        {item}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
+                {/* قائمة الجهات والوزارات في السودان */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">الجهة / الموقع *</label>
-                  <input
-                    type="text"
-                    required
+                  <label className="block text-xs font-bold text-slate-300 mb-1">الجهة / الوزارة المشكوّة *</label>
+                  <select
                     value={entity}
                     onChange={(e) => setEntity(e.target.value)}
-                    placeholder="اسم الوزارة أو المؤسسة..."
-                    className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
-                  />
+                    className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 cursor-pointer"
+                  >
+                    {sudanMinistriesAndEntities.map((item, index) => (
+                      <option key={index} value={item} className="bg-slate-900 text-white">
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -237,7 +291,7 @@ export default function NewReportPage() {
                 </div>
               </div>
 
-              {/* التعهد والموافقات مع رابط منبثق للسياسة */}
+              {/* التعهد واختيار الشروط */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -274,7 +328,7 @@ export default function NewReportPage() {
 
       </div>
 
-      {/* النافذة المنبثقة (Modal) لشروط الخصوصية الاستخدام */}
+      {/* النافذة المنبثقة (Modal) للشروط */}
       {showPrivacyModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl text-right">
