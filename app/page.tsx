@@ -65,9 +65,7 @@ function SudaneseAvatarGuide() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10">
 
-          {/* =========================
-              الشخصية والفيديو
-          ========================== */}
+          {/* الشخصية والفيديو */}
           <div className="md:col-span-5 flex flex-col items-center justify-center text-center space-y-4 pt-6">
 
             <div className="relative w-48 h-48 md:w-56 md:h-56 bg-slate-950 rounded-full border-2 border-amber-500/50 p-1 flex items-center justify-center shadow-2xl shadow-amber-500/10">
@@ -105,9 +103,7 @@ function SudaneseAvatarGuide() {
                 <div className="absolute -bottom-2 right-1/2 translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-amber-500" />
               </div>
 
-              {/* =========================
-                  الفيديو
-              ========================== */}
+              {/* الفيديو */}
               <div
                 key={`video-container-${currentStep}`}
                 className="
@@ -212,9 +208,7 @@ function SudaneseAvatarGuide() {
 
           </div>
 
-          {/* =========================
-              الخطوات
-          ========================== */}
+          {/* الخطوات */}
           <div className="md:col-span-7 space-y-3">
 
             {steps.map((step, idx) => {
@@ -315,9 +309,7 @@ function SudaneseAvatarGuide() {
         </div>
       </div>
 
-      {/* =========================
-          Animations
-      ========================== */}
+      {/* Animations */}
       <style jsx>{`
         @keyframes guideBubble {
           0% {
@@ -381,17 +373,11 @@ function SudaneseAvatarGuide() {
   );
 }
 
-/* =====================================================
-   Landing Page
-===================================================== */
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white dir-rtl flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
 
-      {/* =========================
-          Navbar
-      ========================== */}
+      {/* Navbar */}
       <header className="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
 
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -446,9 +432,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* =========================
-          Hero
-      ========================== */}
+      {/* Hero */}
       <section className="relative overflow-hidden py-16 md:py-24 px-4 flex-1 flex items-center">
 
         {/* Golden glow */}
@@ -559,14 +543,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* =========================
-          Interactive Guide
-      ========================== */}
+      {/* Interactive Guide */}
       <SudaneseAvatarGuide />
 
-      {/* =========================
-          Features
-      ========================== */}
+      {/* Features */}
       <section className="bg-slate-900/40 py-12 px-4 border-t border-slate-800/80">
 
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -625,9 +605,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* =========================
-          Footer
-      ========================== */}
+      {/* Footer */}
       <footer className="bg-slate-950 border-t border-slate-800 py-10 px-4">
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right">
