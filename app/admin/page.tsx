@@ -8,13 +8,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// 🔹 مكون بطاقة البلاغ المتفاعل (يتضمن اتخاذ الإجراءات والرد)
-function ReportCard({ report, onUpdate }: { report: any; onUpdate: () => void }) {
+// 🔹 مكون بطاقة البلاغ المتفاعل المدمج مع خيارات التحكم والرد
+function ReportCardItem({ report, onUpdate }: { report: any; onUpdate: () => void }) {
   const [status, setStatus] = useState(report.status || 'جديد');
   const [adminReply, setAdminReply] = useState(report.admin_reply || '');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleUpdateReport = async () => {
+  const handleUpdate = async () => {
     setIsUpdating(true);
     const { error } = await supabase
       .from('reports')
@@ -35,11 +35,11 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate: () => void })
   };
 
   return (
-    <div className="border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition bg-slate-50/50 space-y-4 shadow-sm">
+    <div className="border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition bg-slate-50/50 space-y-4 shadow-sm text-right dir-rtl">
       {/* الهيدر: الرمز المرجعي والتاريخ */}
       <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
         <span className="font-mono font-bold text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
-          {report.reference_code || 'بدون رمز'}
+          {report.reference_code || 'RSD-UNKNOWN'}
         </span>
         <span className="text-xs text-slate-400">
           {new Date(report.created_at).toLocaleDateString('ar-EG')}
@@ -50,22 +50,32 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate: () => void })
       <h3 className="font-black text-slate-900 text-base">{report.title}</h3>
 
       {/* تفاصيل الميتا */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200/60">
-        <div><span className="font-bold text-slate-800">نوع الفساد:</span> {report.category || report.violation_type || 'غير محدد'}</div>
-        <div><span className="font-bold text-slate-800">الموقع / الجهة:</span> {report.entity || report.location || 'غير محدد'}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
         <div>
-          <span className="font-bold text-slate-800">المُبلّغ:</span>{' '}
-          {report.reporter_name || 'مجهول'} ({report.reporter_phone || report.contact_number || 'بدون رقم'})
+          <span className="font-bold">نوع الفساد:</span>{' '}
+          {report.category || report.violation_type || 'غير محدد'}
+        </div>
+        <div>
+          <span className="font-bold">الموقع / الجهة:</span> [{report.entity || 'غير محدد'}] {report.location || ''}
+        </div>
+        <div>
+          <span className="font-bold">المُبلّغ:</span>{' '}
+          {report.reporter_name || 'أنت تعلم من'} ({report.reporter_phone || report.contact_number || 'بدون رقم'})
+        </div>
+        <div>
+          <span className="font-bold">الحالة الحالية:</span>{' '}
+          <span className="bg-slate-200 px-2.5 py-0.5 rounded-md font-bold text-slate-800">
+            {report.status || 'جديد'}
+          </span>
         </div>
       </div>
 
       {/* نص البلاغ */}
       <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
-        <span className="font-bold block text-slate-900 mb-1">تفاصيل البلاغ:</span>
         {report.description}
       </div>
 
-      {/* عرض المرفقات إن وجدت */}
+      {/* المرفقات إن وجدت */}
       {(report.attachment_url || report.file_url) && (
         <div className="pt-1">
           <a
@@ -79,20 +89,20 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate: () => void })
         </div>
       )}
 
-      {/* ⚙️ قسم اتخاذ الإجراءات والرد من المشرف */}
-      <div className="bg-slate-100/80 p-4 rounded-xl border border-slate-200/80 space-y-3 pt-3 mt-2">
-        <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-          <span>⚙️</span> اتخاذ إجراء وتحديد الحالة:
+      {/* ⚙️ قسم اتخاذ الإجراء والرد الرسمي من المشرف */}
+      <div className="bg-white p-4 rounded-xl border border-slate-300 space-y-3 pt-3 mt-3 shadow-sm">
+        <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-2">
+          <span>⚙️</span> اتخاذ إجراء المشرف وتحديث حالة البلاغ:
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* تغيير حالة البلاغ */}
+          {/* اختيار حالة البلاغ */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">حالة البلاغ الحالية:</label>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">تعديل الحالة:</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-white border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
             >
               <option value="جديد">جديد</option>
               <option value="قيد المراجعة">قيد المراجعة</option>
@@ -103,27 +113,27 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate: () => void })
             </select>
           </div>
 
-          {/* نص رد الإدارة للمواطن */}
+          {/* كتابة الرد الرسمي */}
           <div className="md:col-span-2">
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">رد المشرف (يظهر عند الاستعلام):</label>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">الرد الرسمي (يظهر للمواطن):</label>
             <input
               type="text"
               value={adminReply}
               onChange={(e) => setAdminReply(e.target.value)}
-              placeholder="اكتب الإجراء المتخذ أو الرد الرسمي هنا..."
-              className="w-full bg-white border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="اكتب الإجراء المتخذ أو الرد الموجه لصاحب البلاغ..."
+              className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
         </div>
 
         {/* زر تنفيذ وتحديث البلاغ */}
-        <div className="flex justify-end pt-1">
+        <div className="flex justify-end pt-2">
           <button
-            onClick={handleUpdateReport}
+            onClick={handleUpdate}
             disabled={isUpdating}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow disabled:opacity-50 flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition shadow disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
-            {isUpdating ? 'جاري حفظ الإجراء...' : '💾 حفظ الإجراء والرد'}
+            {isUpdating ? 'جاري الحفظ...' : '💾 حفظ الإجراء والرد'}
           </button>
         </div>
       </div>
@@ -142,7 +152,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('الكل');
 
-  // التحقق من حالة تسجيل الدخول الحالية
   useEffect(() => {
     checkUser();
   }, []);
@@ -155,7 +164,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // جلب البلاغات من Supabase
   const fetchReports = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -169,7 +177,6 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  // تسجيل الدخول ببيانات Supabase Auth
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
@@ -190,7 +197,6 @@ export default function AdminDashboard() {
     setAuthLoading(false);
   };
 
-  // تسجيل الخروج
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -198,7 +204,7 @@ export default function AdminDashboard() {
     setPassword('');
   };
 
-  // 1. شاشة تسجيل الدخول
+  // شاشة تسجيل الدخول
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4 dir-rtl">
@@ -243,7 +249,7 @@ export default function AdminDashboard() {
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg disabled:opacity-50 cursor-pointer"
             >
               {authLoading ? 'جاري التحقق...' : 'دخول اللوحة'}
             </button>
@@ -262,7 +268,7 @@ export default function AdminDashboard() {
   const filteredReports =
     statusFilter === 'الكل' ? reports : reports.filter((r) => r.status === statusFilter);
 
-  // 2. شاشة لوحة الإشراف
+  // شاشة لوحة الإشراف
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 p-4 md:p-8 dir-rtl">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -284,14 +290,14 @@ export default function AdminDashboard() {
 
             <button
               onClick={fetchReports}
-              className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5"
+              className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
             >
               <span>🔄</span> تحديث البيانات
             </button>
 
             <button
               onClick={handleLogout}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-4 py-2.5 rounded-xl transition"
+              className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"
             >
               تسجيل الخروج
             </button>
@@ -305,7 +311,7 @@ export default function AdminDashboard() {
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-4 py-2 rounded-xl transition whitespace-nowrap ${
+              className={`px-4 py-2 rounded-xl transition whitespace-nowrap cursor-pointer ${
                 statusFilter === st
                   ? 'bg-slate-900 text-white shadow'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -316,7 +322,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* قائمة البلاغات مع بطاقات التحكم */}
+        {/* قائمة البلاغات مع عناصر اتخاذ الإجراء المدمجة */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm min-h-[300px]">
           {loading ? (
             <div className="text-center py-12 text-slate-400 text-sm">جاري تحميل البلاغات...</div>
@@ -325,7 +331,7 @@ export default function AdminDashboard() {
           ) : (
             <div className="space-y-4">
               {filteredReports.map((report) => (
-                <ReportCard key={report.id} report={report} onUpdate={fetchReports} />
+                <ReportCardItem key={report.id} report={report} onUpdate={fetchReports} />
               ))}
             </div>
           )}
