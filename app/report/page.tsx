@@ -1,187 +1,295 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// 1. المكون الرئيسي المخصص للصفحة (بدون Props)
-export default function ReportPage() {
-  const [reports, setReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function PublicReportPage() {
+  const [tab, setTab] = useState<'create' | 'track'>('create');
+  
+  // نموذج التقديم
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('استغلال النفوذ والسلطة الوظيفية');
+  const [entity, setEntity] = useState('');
+  const [description, setDescription] = useState('');
+  const [reporterName, setReporterName] = useState('');
+  const [reporterPhone, setReporterPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdRefCode, setCreatedRefCode] = useState<string | null>(null);
 
-  const fetchReports = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
-      setReports(data);
-    }
-    setLoading(false);
+  // نموذج الاستعلام
+  const [searchCode, setSearchCode] = useState('');
+  const [trackedReport, setTrackedReport] = useState<any | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  // توليد رمز مرجعي عشوائي
+  const generateRefCode = () => {
+    return 'RSD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setCreatedRefCode(null);
 
-  return (
-    <main className="min-h-screen bg-slate-950 text-white p-6 dir-rtl text-right">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl font-black text-amber-400">إدارة ومتابعة البلاغات</h1>
-        {loading ? (
-          <p className="text-slate-400 text-sm">جاري تحميل البلاغات...</p>
-        ) : reports.length === 0 ? (
-          <p className="text-slate-400 text-sm">لا توجد بلاغات حالياً.</p>
-        ) : (
-          <div className="space-y-4">
-            {reports.map((item) => (
-              <ReportCard key={item.id} report={item} onUpdate={fetchReports} />
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
-  );
-}
+    const refCode = generateRefCode();
 
-// 2. المكون الفرعي الخاص ببطاقة البلاغ
-function ReportCard({ report, onUpdate }: { report: any; onUpdate?: () => void }) {
-  const [status, setStatus] = useState(report?.status || 'جديد');
-  const [adminReply, setAdminReply] = useState(report?.admin_reply || '');
-  const [isUpdating, setIsUpdating] = useState(false);
+    const { error } = await supabase.from('reports').insert([
+      {
+        title,
+        category,
+        entity,
+        description,
+        reporter_name: reporterName || 'مجهول الهوية',
+        reporter_phone: reporterPhone || null,
+        reference_code: refCode,
+        status: 'جديد',
+      },
+    ]);
 
-  useEffect(() => {
-    if (report) {
-      setStatus(report.status || 'جديد');
-      setAdminReply(report.admin_reply || '');
-    }
-  }, [report]);
-
-  if (!report) return null;
-
-  const handleUpdate = async () => {
-    if (!report?.id) {
-      alert('خطأ: لم يتم العثور على المعرف الخاص بالبلاغ.');
-      return;
-    }
-
-    setIsUpdating(true);
-    const { error } = await supabase
-      .from('reports')
-      .update({
-        status: status,
-        admin_reply: adminReply,
-      })
-      .eq('id', report.id);
-
-    setIsUpdating(false);
+    setIsSubmitting(false);
 
     if (error) {
-      alert('حدث خطأ أثناء حفظ الإجراء: ' + error.message);
+      alert('حدث خطأ أثناء تقديم البلاغ: ' + error.message);
     } else {
-      alert('تم تحديث حالة البلاغ والرد بنجاح!');
-      if (onUpdate) onUpdate();
+      setCreatedRefCode(refCode);
+      setTitle('');
+      setEntity('');
+      setDescription('');
+      setReporterName('');
+      setReporterPhone('');
+    }
+  };
+
+  const handleTrack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchCode.trim()) return;
+
+    setIsSearching(true);
+    setSearchError('');
+    setTrackedReport(null);
+
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('reference_code', searchCode.trim().toUpperCase())
+      .single();
+
+    setIsSearching(false);
+
+    if (error || !data) {
+      setSearchError('لم يتم العثور على بلاغ بهذا الرمز المرجعي. يُرجى التأكد من الرمز والمحاولة مجدداً.');
+    } else {
+      setTrackedReport(data);
     }
   };
 
   return (
-    <div className="border border-slate-800 rounded-2xl p-5 bg-slate-900/80 space-y-4 shadow-sm text-slate-100">
-      {/* الهيدر: الرمز المرجعي والتاريخ */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-        <span className="font-mono font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-lg">
-          {report.reference_code || 'بدون رمز'}
-        </span>
-        <span className="text-xs text-slate-400">
-          {report.created_at ? new Date(report.created_at).toLocaleDateString('ar-EG') : 'تاريخ غير محدد'}
-        </span>
-      </div>
-
-      {/* عنوان البلاغ */}
-      <h3 className="font-black text-white text-base">{report.title || 'بدون عنوان'}</h3>
-
-      {/* تفاصيل الميتا */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-300">
-        <div><span className="font-bold text-amber-400">نوع الفساد:</span> {report.category || report.violation_type || 'غير محدد'}</div>
-        <div><span className="font-bold text-amber-400">الموقع / الجهة:</span> {report.entity || report.location || 'غير محدد'}</div>
-        <div>
-          <span className="font-bold text-amber-400">المُبلّغ:</span>{' '}
-          {report.reporter_name || 'سري'} ({report.reporter_phone || report.contact_number || 'بدون رقم'})
-        </div>
-        <div>
-          <span className="font-bold text-amber-400">الحالة الحالية:</span>{' '}
-          <span className="bg-slate-800 px-2.5 py-0.5 rounded-md font-bold text-amber-300 border border-slate-700">
-            {report.status || 'جديد'}
-          </span>
-        </div>
-      </div>
-
-      {/* نص البلاغ */}
-      <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
-        {report.description || 'لا توجد تفاصيل لهذا البلاغ.'}
-      </div>
-
-      {/* المرفق إن وجد */}
-      {(report.attachment_url || report.file_url) && (
-        <div className="pt-1">
-          <a
-            href={report.attachment_url || report.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/30 font-bold"
-          >
-            📎 عرض المرفق / المستند
-          </a>
-        </div>
-      )}
-
-      {/* قسم اتخاذ الإجراء من قبل المشرف */}
-      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 pt-3 mt-3 shadow-inner">
-        <h4 className="text-xs font-black text-amber-400 flex items-center gap-1.5">
-          <span>⚙️</span> اتخاذ إجراء المشرف وتعديل الحالة:
-        </h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* اختيار الحالة */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-400 mb-1">تغيير حالة البلاغ:</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
-            >
-              <option value="جديد">جديد</option>
-              <option value="قيد المراجعة">قيد المراجعة</option>
-              <option value="قيد التحقيق">قيد التحقيق</option>
-              <option value="تم الاتخاذ والإحالة">تم الاتخاذ والإحالة</option>
-              <option value="مكتمل ومغلق">مكتمل ومغلق</option>
-              <option value="مرفوض / غير مستوفي">مرفوض / غير مستوفي</option>
-            </select>
-          </div>
-
-          {/* نص الرد */}
-          <div className="md:col-span-2">
-            <label className="block text-[11px] font-bold text-slate-400 mb-1">رد الإدارة (يظهر للمواطن):</label>
-            <input
-              type="text"
-              value={adminReply}
-              onChange={(e) => setAdminReply(e.target.value)}
-              placeholder="اكتب الرد الرسمي والإجراء المتخذ..."
-              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-amber-500 outline-none"
-            />
-          </div>
+    <div className="min-h-screen bg-slate-950 text-white dir-rtl text-right py-8 px-4 flex flex-col justify-between">
+      <div className="max-w-2xl mx-auto w-full space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <Link href="/" className="text-amber-400 font-black text-xl flex items-center gap-2">
+            🛡️ منصة راصد
+          </Link>
+          <Link href="/admin" className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl border border-slate-700">
+            🔐 دخول المشرفين
+          </Link>
         </div>
 
-        {/* زر الحفظ */}
-        <div className="flex justify-end pt-1">
+        {/* Tab Buttons */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
           <button
-            onClick={handleUpdate}
-            disabled={isUpdating}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-5 py-2 rounded-xl transition shadow disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            onClick={() => setTab('create')}
+            className={`py-2.5 text-xs font-bold rounded-xl transition ${
+              tab === 'create' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
           >
-            {isUpdating ? 'جاري الحفظ...' : '💾 حفظ الإجراء والرد'}
+            📝 تقديم بلاغ جديد
+          </button>
+          <button
+            onClick={() => setTab('track')}
+            className={`py-2.5 text-xs font-bold rounded-xl transition ${
+              tab === 'track' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🔍 متابعة حالة بلاغ
           </button>
         </div>
+
+        {/* TAB 1: تقديم البلاغ */}
+        {tab === 'create' && (
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-2xl">
+            <h2 className="text-lg font-black text-amber-400">تقديم بلاغ جديد</h2>
+
+            {createdRefCode ? (
+              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-6 text-center space-y-3">
+                <span className="text-4xl">🎉</span>
+                <h3 className="font-bold text-white text-base">تم تقديم البلاغ بنجاح!</h3>
+                <p className="text-xs text-slate-300">احتفظ بالرمز المرجعي التالي لمتابعة حالة بلاغك:</p>
+                <div className="font-mono font-black text-xl bg-slate-950 text-amber-400 border border-amber-500/50 py-3 rounded-xl select-all">
+                  {createdRefCode}
+                </div>
+                <button
+                  onClick={() => setCreatedRefCode(null)}
+                  className="text-xs text-slate-400 hover:text-amber-400 underline pt-2"
+                >
+                  تقديم بلاغ آخر
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">عنوان البلاغ *</label>
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="مثال: تجاوز في إجراءات التعيين..."
+                    className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">نوع التجاوز</label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                    >
+                      <option value="استغلال النفوذ والسلطة الوظيفية">استغلال النفوذ والسلطة الوظيفية</option>
+                      <option value="الرشوة والابتزاز المالي">الرشوة والابتزاز المالي</option>
+                      <option value="تبديد المال العام">تبديد المال العام</option>
+                      <option value="تجاوزات أخرى">تجاوزات أخرى</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">الجهة / الموقع *</label>
+                    <input
+                      type="text"
+                      required
+                      value={entity}
+                      onChange={(e) => setEntity(e.target.value)}
+                      placeholder="اسم الوزارة أو المؤسسة..."
+                      className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">تفاصيل البلاغ *</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="اكتب شرحاً مفصلاً للتجاوز والموقع والتاريخ..."
+                    className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">اسم المُبلّغ (اختياري)</label>
+                    <input
+                      type="text"
+                      value={reporterName}
+                      onChange={(e) => setReporterName(e.target.value)}
+                      placeholder="اتركه فارغاً لتقديم بلاغ سري"
+                      className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">رقم التواصل (اختياري)</label>
+                    <input
+                      type="text"
+                      value={reporterPhone}
+                      onChange={(e) => setReporterPhone(e.target.value)}
+                      placeholder="للتواصل عند الحاجة فقط"
+                      className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-3 rounded-xl transition text-xs shadow-lg disabled:opacity-50"
+                >
+                  {isSubmitting ? 'جاري إرسال البلاغ...' : '🚀 إرسال البلاغ الآن'}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: الاستعلام والمتابعة */}
+        {tab === 'track' && (
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-2xl">
+            <h2 className="text-lg font-black text-amber-400">متابعة حالة بلاغ سابق</h2>
+
+            <form onSubmit={handleTrack} className="flex gap-2">
+              <input
+                type="text"
+                required
+                value={searchCode}
+                onChange={(e) => setSearchCode(e.target.value)}
+                placeholder="أدخل الرمز المرجعي (مثال: RSD-SZF2X4)..."
+                className="flex-1 bg-slate-950 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-amber-500 uppercase font-mono"
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-xl text-xs transition disabled:opacity-50"
+              >
+                {isSearching ? 'جاري البحث...' : 'بحث'}
+              </button>
+            </form>
+
+            {searchError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
+                {searchError}
+              </p>
+            )}
+
+            {trackedReport && (
+              <div className="border border-slate-800 rounded-2xl p-5 bg-slate-950 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span className="font-mono text-xs text-amber-400 font-bold">
+                    {trackedReport.reference_code}
+                  </span>
+                  <span className="text-[11px] bg-slate-800 px-2.5 py-1 rounded-md text-slate-300 font-bold">
+                    الحالة: {trackedReport.status || 'جديد'}
+                  </span>
+                </div>
+
+                <h3 className="font-black text-white text-sm">{trackedReport.title}</h3>
+                <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl">
+                  {trackedReport.description}
+                </p>
+
+                {/* رد الإدارة للمواطن */}
+                <div className="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-xl space-y-1">
+                  <h4 className="text-xs font-bold text-amber-400">📩 رد وإجراء الإدارة:</h4>
+                  <p className="text-xs text-slate-200">
+                    {trackedReport.admin_reply || 'البلاغ قيد المراجعة والتقييم من قبل فريق الإشراف.'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
