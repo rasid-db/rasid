@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: __dirname,
+  turbo: {
+    // ترك الكائن فارغًا لتشغيل إعدادات Turbopack الافتراضية المستقرة
   },
 };
 
