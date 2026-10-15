@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -12,7 +12,14 @@ export default function ReportCard({ report, onUpdate }: { report: any; onUpdate
   const [adminReply, setAdminReply] = useState(report?.admin_reply || '');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // إذا لم تتم تصفية البيانات بشكل صحيح، نمنع حدوث Error في الصفحة
+  // 🔹 تحديث الحالة والرد محلياً فور تغيّرهما في البيانات القادمة من Supabase
+  useEffect(() => {
+    if (report) {
+      setStatus(report.status || 'جديد');
+      setAdminReply(report.admin_reply || '');
+    }
+  }, [report]);
+
   if (!report) return null;
 
   const handleUpdate = async () => {
