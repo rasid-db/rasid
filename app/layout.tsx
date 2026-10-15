@@ -5,7 +5,6 @@ import "./globals.css";
 const cairo = Cairo({
   subsets: ["arabic"],
   display: "swap",
-  variable: "--font-cairo",
 });
 
 export const metadata: Metadata = {
@@ -19,11 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="ar"
-      dir="rtl"
-      className={`${cairo.variable} h-full antialiased`}
-    >
+    <html lang="ar" dir="rtl" className={cairo.className}>
       <body className="min-h-full flex flex-col bg-slate-100 text-slate-900 font-sans">
         {children}
       </body>
