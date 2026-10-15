@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase'; // 👈 استدعاء العميل الموحد للمشروع
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -41,7 +45,7 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError('');
@@ -68,7 +72,6 @@ export default function AdminDashboard() {
     setPassword('');
   };
 
-  // دالة تحديث البلاغ من داخل القائمة مباشرة
   const handleUpdateReport = async (id: string, newStatus: string, newReply: string) => {
     setUpdatingId(id);
     const { error } = await supabase
@@ -156,7 +159,6 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-100 text-slate-800 p-4 md:p-8 dir-rtl">
       <div className="max-w-6xl mx-auto space-y-6">
         
-        {/* الهيدر */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
@@ -187,7 +189,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* أزرار التصفية */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-bold">
           <span className="text-slate-400 whitespace-nowrap ml-2">تصفية:</span>
           {['الكل', 'جديد', 'قيد المراجعة', 'قيد التحقيق', 'تم الاتخاذ والإحالة', 'مكتمل ومغلق', 'مرفوض / غير مستوفي'].map((st) => (
@@ -205,7 +206,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* قائمة البلاغات */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm min-h-[300px]">
           {loading ? (
             <div className="text-center py-12 text-slate-400 text-sm">جاري التحميل...</div>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
           ) : (
             <div className="space-y-4">
               {filteredReports.map((report) => (
-                <AdminReportCard
+                <ReportRow
                   key={report.id}
                   report={report}
                   isUpdating={updatingId === report.id}
@@ -230,8 +230,7 @@ export default function AdminDashboard() {
   );
 }
 
-// مكون بسيط وفرعي للبلاغ
-function AdminReportCard({ report, isUpdating, onSave }: { report: any; isUpdating: boolean; onSave: (status: string, reply: string) => void }) {
+function ReportRow({ report, isUpdating, onSave }: { report: any; isUpdating: boolean; onSave: (status: string, reply: string) => void }) {
   const [status, setStatus] = useState(report.status || 'جديد');
   const [reply, setReply] = useState(report.admin_reply || '');
 
@@ -259,7 +258,6 @@ function AdminReportCard({ report, isUpdating, onSave }: { report: any; isUpdati
         {report.description}
       </div>
 
-      {/* قسم اتخاذ الإجراء والرد */}
       <div className="bg-white p-4 rounded-xl border border-slate-300 space-y-3 pt-3 mt-3 shadow-sm">
         <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">⚙️ اتخاذ إجراء المشرف:</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -294,7 +292,7 @@ function AdminReportCard({ report, isUpdating, onSave }: { report: any; isUpdati
           <button
             onClick={() => onSave(status, reply)}
             disabled={isUpdating}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition shadow disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition shadow disabled:opacity-50 cursor-pointer"
           >
             {isUpdating ? 'جاري الحفظ...' : '💾 حفظ الإجراء والرد'}
           </button>
