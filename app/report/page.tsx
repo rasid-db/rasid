@@ -12,7 +12,15 @@ export default function ReportCard({ report, onUpdate }: { report: any; onUpdate
   const [adminReply, setAdminReply] = useState(report?.admin_reply || '');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // إذا لم تتم تصفية البيانات بشكل صحيح، نمنع حدوث Error في الصفحة
+  if (!report) return null;
+
   const handleUpdate = async () => {
+    if (!report?.id) {
+      alert('خطأ: لم يتم العثور على المعرف الخاص بالبلاغ.');
+      return;
+    }
+
     setIsUpdating(true);
     const { error } = await supabase
       .from('reports')
@@ -40,12 +48,12 @@ export default function ReportCard({ report, onUpdate }: { report: any; onUpdate
           {report.reference_code || 'بدون رمز'}
         </span>
         <span className="text-xs text-slate-400">
-          {new Date(report.created_at).toLocaleDateString('ar-EG')}
+          {report.created_at ? new Date(report.created_at).toLocaleDateString('ar-EG') : 'تاريخ غير محدد'}
         </span>
       </div>
 
       {/* عنوان البلاغ */}
-      <h3 className="font-black text-slate-900 text-base">{report.title}</h3>
+      <h3 className="font-black text-slate-900 text-base">{report.title || 'بدون عنوان'}</h3>
 
       {/* تفاصيل الميتا */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
@@ -65,7 +73,7 @@ export default function ReportCard({ report, onUpdate }: { report: any; onUpdate
 
       {/* نص البلاغ */}
       <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
-        {report.description}
+        {report.description || 'لا توجد تفاصيل لهذا البلاغ.'}
       </div>
 
       {/* المرفق إن وجد */}
@@ -95,7 +103,7 @@ export default function ReportCard({ report, onUpdate }: { report: any; onUpdate
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
             >
               <option value="جديد">جديد</option>
               <option value="قيد المراجعة">قيد المراجعة</option>
@@ -124,7 +132,7 @@ export default function ReportCard({ report, onUpdate }: { report: any; onUpdate
           <button
             onClick={handleUpdate}
             disabled={isUpdating}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-xl transition shadow disabled:opacity-50 flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-xl transition shadow disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             {isUpdating ? 'جاري الحفظ...' : '💾 حفظ الإجراء والرد'}
           </button>
