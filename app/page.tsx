@@ -11,14 +11,14 @@ function SudaneseAvatarGuide() {
     {
       title: 'يا زول مرحب بيك!',
       dialogue:
-        'عايز تبلغ عن أي تجاوز؟ الموضوع بسيط وسري جداً.. اضغط على زر "تقديم / متابعة بلاغ".',
+        'عايز تبلغ عن أي تجاوز؟ الموضوع بسيط وسري جداً.. اضغط على زر "تقديم بلاغ".',
       actionText: '1. اضغط على تقديم بلاغ',
       icon: '📝',
     },
     {
       title: 'اكتب التفاصيل',
       dialogue:
-        'ادخل الموقع، واكتب الحصل شنو بالضبط، ولو عندك صورة أو ملف مرفق ارفقو هنا.',
+        'ادخل الموقع، واكتب الحصل شنو بالضبط، وارفق الصورة أو الملف المرفق.',
       actionText: '2. عبّي البيانات والمرفقات',
       icon: '📂',
     },
@@ -32,7 +32,7 @@ function SudaneseAvatarGuide() {
     {
       title: 'تابع بلاغك بأمان',
       dialogue:
-        'في أي وقت ادخل الرمز المرجعي عشان تشوف رد الإدارة والإجراءات المتخذة بسريّة تامّة!',
+        'في أي وقت ادخل زر "متابعة بلاغ" وادخل الرمز المرجعي عشان تشوف رد الإدارة بسريّة تامّة!',
       actionText: '4. متابعة حالة البلاغ',
       icon: '🛡️',
     },
@@ -110,7 +110,6 @@ function SudaneseAvatarGuide() {
                     المتصفح لا يدعم تشغيل الفيديو.
                   </video>
                 ) : (
-                  /* حالة فشل الفيديو */
                   <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
                     <div className="text-6xl mb-3">🇸🇩</div>
                     <div className="text-amber-400 font-black text-sm">المرشد السوداني</div>
@@ -216,6 +215,7 @@ export default function LandingPage() {
             </div>
           </div>
 
+          {/* لوحة الإشراف أعلى اليسار فقط */}
           <Link
             href="/admin"
             className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-2 shadow-sm hover:border-amber-500/40"
@@ -250,20 +250,25 @@ export default function LandingPage() {
             رمز مرجعي خاص دون المساس بالخصوصية.
           </p>
 
+          {/* الزران السفليان: تقديم بلاغ + متابعة بلاغ */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+            
+            {/* الزر الأول: تقديم بلاغ فقط */}
             <Link
               href="/report"
               className="w-full sm:w-auto flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-base px-8 py-4 rounded-2xl shadow-xl shadow-amber-500/20 transition transform active:scale-95 flex items-center justify-center gap-3 border border-amber-400/30"
             >
-              📝 تقديم / متابعة بلاغ
+              📝 تقديم بلاغ
             </Link>
 
+            {/* الزر الثاني: متابعة بلاغ */}
             <Link
-              href="/admin"
-              className="w-full sm:w-auto flex-1 bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-bold text-base px-8 py-4 rounded-2xl border border-slate-700 transition transform active:scale-95 flex items-center justify-center gap-3 shadow-lg"
+              href="/track"
+              className="w-full sm:w-auto flex-1 bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-bold text-base px-8 py-4 rounded-2xl border border-slate-700 transition transform active:scale-95 flex items-center justify-center gap-3 shadow-lg hover:border-amber-500/40"
             >
-              📊 دخول المشرفين
+              🔍 متابعة بلاغ
             </Link>
+
           </div>
         </div>
       </section>
