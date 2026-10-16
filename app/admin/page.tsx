@@ -9,7 +9,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function AdminPage() {
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [loadingSession, setLoadingSession] = useState(true);
 
   // بيانات نموذج تسجيل الدخول
@@ -22,23 +22,27 @@ export default function AdminPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
 
-  // التحقق من حالة الجلسة الحالية
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      setLoadingSession(false);
-      if (data.session) {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      // التأكد من أن المستخدم ليس زائفاً أو زائر مجهول الهوية
+      if (user && user.role === 'authenticated' && user.email) {
+        setUser(user);
         fetchReports();
+      } else {
+        setUser(null);
       }
+      setLoadingSession(false);
     };
 
-    checkSession();
+    checkUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
+      if (session?.user && session.user.email) {
+        setUser(session.user);
         fetchReports();
+      } else {
+        setUser(null);
       }
     });
 
@@ -53,23 +57,23 @@ export default function AdminPage() {
     setLoginError('');
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: email.trim(),
+      password: password.trim(),
     });
 
     setIsLoggingIn(false);
 
-    if (error) {
+    if (error || !data.user) {
       setLoginError('بيانات الدخول غير صحيحة، أو البريد غير مسجل كمشرف في Supabase.');
     } else {
-      setSession(data.session);
+      setUser(data.user);
       fetchReports();
     }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setSession(null);
+    setUser(null);
     setReports([]);
   };
 
@@ -88,14 +92,14 @@ export default function AdminPage() {
 
   if (loadingSession) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center text-xs">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center text-xs dir-rtl">
         جاري التحقق من الصلاحيات...
       </div>
     );
   }
 
-  // 1️⃣ إذا لم يكن المستخدم مسجلاً لدخوله -> عرض فورم الدخول للمشرفين فقط
-  if (!session) {
+  // 1️⃣ إظهار نموذج تسجيل الدخول إذا لم يكن المستخدم مسجلاً بحساب رسمي
+  if (!user) {
     return (
       <div className="min-h-screen bg-slate-950 text-white dir-rtl flex flex-col justify-between py-12 px-4">
         <div className="max-w-md mx-auto w-full space-y-6">
@@ -103,7 +107,7 @@ export default function AdminPage() {
             <Link href="/" className="text-amber-400 font-black text-xl flex items-center gap-2">
               🛡️ منصة راصد
             </Link>
-            <Link href="/" className="text-xs text-slate-400 hover:text-white">
+            <Link href="/" className="text-xs text-slate-400 hover:text-white font-bold">
               العودة للرئيسية
             </Link>
           </div>
@@ -113,7 +117,7 @@ export default function AdminPage() {
               <div className="text-4xl">🔐</div>
               <h2 className="text-xl font-black text-white">دخول المشرفين</h2>
               <p className="text-xs text-slate-400">
-                تسجيل الدخول مقتصر على الحسابات المسجلة في Supabase Auth فقط
+                أدخل البريد الإلكتروني وكلمة المرور المسجلة في Supabase Auth
               </p>
             </div>
 
@@ -162,7 +166,7 @@ export default function AdminPage() {
     );
   }
 
-  // 2️⃣ إذا تم تسجيل الدخول بنجاح -> عرض لوحة المشرفين الكاملة
+  // 2️⃣ لوحة المشرفين بعد تسجيل الدخول
   return (
     <main className="min-h-screen bg-slate-950 text-white p-6 dir-rtl text-right">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -178,6 +182,9 @@ export default function AdminPage() {
           </div>
           
           <div className="flex items-center gap-3">
+            <span className="text-xs text-amber-400 font-mono font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+              {user.email}
+            </span>
             <button
               onClick={fetchReports}
               className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 font-bold transition"
