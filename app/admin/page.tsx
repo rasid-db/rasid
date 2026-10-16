@@ -9,49 +9,191 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function AdminPage() {
+  const [session, setSession] = useState<any>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+
+  // بيانات نموذج تسجيل الدخول
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // البلاغات
   const [reports, setReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingReports, setLoadingReports] = useState(false);
+
+  // التحقق من حالة الجلسة الحالية
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+      setLoadingSession(false);
+      if (data.session) {
+        fetchReports();
+      }
+    };
+
+    checkSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        fetchReports();
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsLoggingIn(false);
+
+    if (error) {
+      setLoginError('بيانات الدخول غير صحيحة، أو البريد غير مسجل كمشرف في Supabase.');
+    } else {
+      setSession(data.session);
+      fetchReports();
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setReports([]);
+  };
 
   const fetchReports = async () => {
-    setLoading(true);
+    setLoadingReports(true);
     const { data, error } = await supabase
       .from('reports')
       .select('*')
       .order('created_at', { ascending: false });
-      
+
     if (!error && data) {
       setReports(data);
     }
-    setLoading(false);
+    setLoadingReports(false);
   };
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  if (loadingSession) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center text-xs">
+        جاري التحقق من الصلاحيات...
+      </div>
+    );
+  }
 
+  // 1️⃣ إذا لم يكن المستخدم مسجلاً لدخوله -> عرض فورم الدخول للمشرفين فقط
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white dir-rtl flex flex-col justify-between py-12 px-4">
+        <div className="max-w-md mx-auto w-full space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <Link href="/" className="text-amber-400 font-black text-xl flex items-center gap-2">
+              🛡️ منصة راصد
+            </Link>
+            <Link href="/" className="text-xs text-slate-400 hover:text-white">
+              العودة للرئيسية
+            </Link>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl">
+            <div className="text-center space-y-2">
+              <div className="text-4xl">🔐</div>
+              <h2 className="text-xl font-black text-white">دخول المشرفين</h2>
+              <p className="text-xs text-slate-400">
+                تسجيل الدخول مقتصر على الحسابات المسجلة في Supabase Auth فقط
+              </p>
+            </div>
+
+            {loginError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl leading-relaxed">
+                {loginError}
+              </p>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">البريد الإلكتروني للمشرف *</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@rasid.sd"
+                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white rounded-xl p-3 outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">كلمة المرور *</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white rounded-xl p-3 outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-3 rounded-xl transition text-xs shadow-lg disabled:opacity-50"
+              >
+                {isLoggingIn ? 'جاري التحقق...' : 'تسجيل الدخول للوحة التحكم'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2️⃣ إذا تم تسجيل الدخول بنجاح -> عرض لوحة المشرفين الكاملة
   return (
     <main className="min-h-screen bg-slate-950 text-white p-6 dir-rtl text-right">
       <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* Header */}
+        {/* Header اللوحة */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-amber-400 font-black text-lg">
               🛡️ منصة راصد
             </Link>
             <span className="text-xs text-slate-500">|</span>
-            <h1 className="text-lg font-bold text-slate-200">لوحة الإشراف والمتابعة</h1>
+            <h1 className="text-sm font-bold text-slate-200">لوحة الإشراف والمتابعة</h1>
           </div>
           
-          <button
-            onClick={fetchReports}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 font-bold transition"
-          >
-            🔄 تحديث القائمة
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchReports}
+              className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 font-bold transition"
+            >
+              🔄 تحديث
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-2 rounded-xl font-bold transition"
+            >
+              🚪 خروج
+            </button>
+          </div>
         </div>
 
-        {loading ? (
+        {loadingReports ? (
           <p className="text-slate-400 text-xs">جاري تحميل البلاغات...</p>
         ) : reports.length === 0 ? (
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 text-xs">
@@ -143,7 +285,6 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate?: () => void }
             {report.created_at ? new Date(report.created_at).toLocaleDateString('ar-EG') : ''}
           </span>
 
-          {/* زر حذف البلاغ للمشرف */}
           <button
             type="button"
             onClick={handleDelete}
@@ -177,7 +318,7 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate?: () => void }
         {report.description || 'لا توجد تفاصيل لهذا البلاغ.'}
       </div>
 
-      {/* عرض الدليل المرفق للمشرف حصراً */}
+      {/* المرفق للمشرف فقط */}
       {report.attachment_url && (
         <div className="pt-1">
           <a
@@ -191,7 +332,7 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate?: () => void }
         </div>
       )}
 
-      {/* إجراءات المشرف والرد */}
+      {/* تعديل الإجراء والرد */}
       <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 pt-3 mt-3 shadow-inner">
         <h4 className="text-xs font-black text-amber-400 flex items-center gap-1.5">
           <span>⚙️</span> اتخاذ إجراء المشرف وتعديل الحالة:
@@ -210,7 +351,7 @@ function ReportCard({ report, onUpdate }: { report: any; onUpdate?: () => void }
               <option value="قيد التحقيق">قيد التحقيق</option>
               <option value="تم الاتخاذ والإحالة">تم الاتخاذ والإحالة</option>
               <option value="مكتمل ومغلق">مكتمل ومغلق</option>
-              <option value="مرفوض / مزحة / غير مستوفي">مرفوض / غير مستوفي</option>
+              <option value="مرفوض / غير مستوفي">مرفوض / غير مستوفي</option>
             </select>
           </div>
 
